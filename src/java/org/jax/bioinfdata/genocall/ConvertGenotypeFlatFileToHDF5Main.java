@@ -216,8 +216,6 @@ public class ConvertGenotypeFlatFileToHDF5Main
                 final String lstGenoColStr = commandLine.getOptionValue(lastGenoColumnOption.getOpt());
                 final String outFileName = commandLine.getOptionValue(outputFileOption.getOpt());
                 
-                final GenotypesHDF5 gHDF5 = new GenotypesHDF5();
-                
                 final FlatFileReader genoFFR;
                 if(genoInFmtStr == null || genoInFmtStr.trim().toLowerCase().equals("csv"))
                 {
@@ -236,6 +234,20 @@ public class ConvertGenotypeFlatFileToHDF5Main
                     throw new ParseException("geno file input format must be \"tab\" or \"csv\"");
                 }
                 
+                GenotypesFlatFile gff = new GenotypesFlatFile();
+                GenotypeCallMatrix genoMat = gff.readGenoCallMatrix(
+                        genoFFR,
+                        argToIntMinus1(aColStr),
+                        argToIntMinus1(bColStr),
+                        argToIntMinus1(snpColStr),
+                        argToIntMinus1(chrColStr),
+                        argToIntMinus1(bpPosStr),
+                        bpBuildIDStr,
+                        argToIntMinus1(fstGenoColStr),
+                        argToInt(lstGenoColStr));
+                genoFFR.close();
+                
+                GenotypesHDF5 ghdf5 = new GenotypesHDF5();
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
                 File hdf5File = new File(outFileName);
                 if(hdf5File.exists())
@@ -247,19 +259,7 @@ public class ConvertGenotypeFlatFileToHDF5Main
                     }
                 }
                 IHDF5Writer hdf5Writer = hdf5Fac.open(hdf5File);
-                gHDF5.genoFlatFileToHDF5(
-                        genoFFR,
-                        argToIntMinus1(aColStr),
-                        argToIntMinus1(bColStr),
-                        argToIntMinus1(snpColStr),
-                        argToIntMinus1(chrColStr),
-                        argToIntMinus1(bpPosStr),
-                        bpBuildIDStr,
-                        argToIntMinus1(fstGenoColStr),
-                        argToInt(lstGenoColStr),
-                        hdf5Writer);
-                
-                genoFFR.close();
+                ghdf5.writeGenoCallMatrix(genoMat, hdf5Writer);
                 hdf5Writer.close();
             }
         }

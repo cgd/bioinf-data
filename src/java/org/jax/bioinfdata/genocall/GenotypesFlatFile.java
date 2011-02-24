@@ -181,7 +181,7 @@ public class GenotypesFlatFile
      * @throws IOException
      *          if there is a problem with file IO while reading the flat file
      */
-    public GenotypeCallMatrix genoFlatFileToHDF5(
+    public GenotypeCallMatrix readGenoCallMatrix(
             FlatFileReader flatFileReader,
             int aAlleleColumn,
             int bAlleleColumn,

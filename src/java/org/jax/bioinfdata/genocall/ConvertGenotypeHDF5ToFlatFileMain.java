@@ -108,10 +108,11 @@ public class ConvertGenotypeHDF5ToFlatFileMain
                 final String genoOutFmtStr = commandLine.getOptionValue(genoOutFormatOption.getOpt());
                 final String outFileName = commandLine.getOptionValue(outputFileOption.getOpt());
                 
-                final GenotypesHDF5 gHDF5 = new GenotypesHDF5();
-                
+                GenotypesHDF5 ghdf5 = new GenotypesHDF5();
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
                 IHDF5Reader hdf5Reader = hdf5Fac.openForReading(new File(outFileName));
+                GenotypeCallMatrix genoMatrix = ghdf5.readGenoCallMatrix(hdf5Reader);
+                hdf5Reader.close();
                 
                 final FlatFileWriter genoFFW;
                 if(genoOutFmtStr == null || genoOutFmtStr.trim().toLowerCase().equals("csv"))
@@ -131,8 +132,8 @@ public class ConvertGenotypeHDF5ToFlatFileMain
                     throw new ParseException("geno file input format must be \"tab\" or \"csv\"");
                 }
                 
-                gHDF5.genoHDF5ToCSV(hdf5Reader, genoFFW);
-                hdf5Reader.close();
+                GenotypesFlatFile gff = new GenotypesFlatFile();
+                gff.writeGenoCallMatrix(genoMatrix, genoFFW);
                 genoFFW.close();
             }
         }
