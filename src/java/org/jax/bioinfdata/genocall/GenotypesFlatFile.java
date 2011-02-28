@@ -19,6 +19,7 @@ package org.jax.bioinfdata.genocall;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.jax.util.datastructure.SequenceUtilities;
@@ -154,8 +155,8 @@ public class GenotypesFlatFile
 
     /**
      * Convert a genotype CSV file to an HDF5 file
-     * @param flatFileReader
-     *          the genotype file
+     * @param flatFileReaders
+     *          the genotype files
      * @param aAlleleColumn
      *          the column index for the A allele
      * @param bAlleleColumn
@@ -182,7 +183,7 @@ public class GenotypesFlatFile
      *          if there is a problem with file IO while reading the flat file
      */
     public GenotypeCallMatrix readGenoCallMatrix(
-            FlatFileReader flatFileReader,
+            FlatFileReader[] flatFileReaders,
             int aAlleleColumn,
             int bAlleleColumn,
             int snpIdColumn,
@@ -193,22 +194,22 @@ public class GenotypesFlatFile
             int lastGenotypeColumnExclusive) throws IllegalFormatException, IOException
     {
         // start with the geno headers
-        String[] currRow = flatFileReader.readRow();
-        if(currRow == null)
+        String[] header = flatFileReaders[0].readRow();
+        if(header == null)
         {
             throw new IllegalFormatException("Failed to read the header");
         }
         
         if(lastGenotypeColumnExclusive == -1)
         {
-            lastGenotypeColumnExclusive = currRow.length;
+            lastGenotypeColumnExclusive = header.length;
         }
         
         int strainCount = lastGenotypeColumnExclusive - firstGenotypeColumn;
         String[] headerStrains = new String[strainCount];
         for(int i = 0; i < headerStrains.length; i++)
         {
-            headerStrains[i] = currRow[i + firstGenotypeColumn];
+            headerStrains[i] = header[i + firstGenotypeColumn];
         }
         
         // read the genotype data
@@ -222,37 +223,54 @@ public class GenotypesFlatFile
         boolean bpPosValid = bpPositionColumn >= 0;
         List<Long> bpPos = bpPosValid ? new ArrayList<Long>() : null;
         
-        while((currRow = flatFileReader.readRow()) != null)
+        for(int i = 0; i < flatFileReaders.length; i++)
         {
-            String aAllele = currRow[aAlleleColumn];
-            aAlleles.add(aAllele);
-            String bAllele = currRow[bAlleleColumn];
-            bAlleles.add(bAllele);
-            
-            if(snpIdValid)
+            String[] currRow = null;
+            if(i >= 1)
             {
-                snpIds.add(currRow[snpIdColumn]);
+                currRow = flatFileReaders[i].readRow();
+                if(!Arrays.equals(currRow, header))
+                {
+                    throw new IllegalFormatException(
+                            "All file headers must match but\n\n\"" +
+                            SequenceUtilities.toString(Arrays.asList(currRow)) +
+                            "\"\n\ndoes not match\n\n\"" +
+                            SequenceUtilities.toString(Arrays.asList(header)) + "\"");
+                }
             }
             
-            if(chrValid)
+            while((currRow = flatFileReaders[i].readRow()) != null)
             {
-                chrs.add(currRow[chrColumn]);
+                String aAllele = currRow[aAlleleColumn];
+                aAlleles.add(aAllele);
+                String bAllele = currRow[bAlleleColumn];
+                bAlleles.add(bAllele);
+                
+                if(snpIdValid)
+                {
+                    snpIds.add(currRow[snpIdColumn]);
+                }
+                
+                if(chrValid)
+                {
+                    chrs.add(currRow[chrColumn]);
+                }
+                
+                if(bpPosValid)
+                {
+                    bpPos.add(Long.parseLong(currRow[bpPositionColumn]));
+                }
+                
+                byte[] currSnpGenos = new byte[strainCount];
+                for(int strainIndex = 0; strainIndex < strainCount; strainIndex++)
+                {
+                    currSnpGenos[strainIndex] = GenotypeCallMatrix.toCallValue(
+                            aAllele,
+                            bAllele,
+                            currRow[strainIndex + firstGenotypeColumn]);
+                }
+                callValues.add(currSnpGenos);
             }
-            
-            if(bpPosValid)
-            {
-                bpPos.add(Long.parseLong(currRow[bpPositionColumn]));
-            }
-            
-            byte[] currSnpGenos = new byte[strainCount];
-            for(int strainIndex = 0; strainIndex < strainCount; strainIndex++)
-            {
-                currSnpGenos[strainIndex] = GenotypeCallMatrix.toCallValue(
-                        aAllele,
-                        bAllele,
-                        currRow[strainIndex + firstGenotypeColumn]);
-            }
-            callValues.add(currSnpGenos);
         }
         
         // write the data

@@ -77,19 +77,23 @@ public class GenotypeCallMatrix
         aAllele = aAllele.toUpperCase();
         bAllele = bAllele.toUpperCase();
         genoCall = genoCall.toUpperCase();
-        if(genoCall.equals(aAllele))
+        if(genoCall.equals(aAllele) ||
+           genoCall.equals(Byte.toString(AlleleCallCode.ACall.getNumCode())))
         {
             return AlleleCallCode.ACall;
         }
-        else if(genoCall.equals(bAllele))
+        else if(genoCall.equals(bAllele) ||
+                genoCall.equals(Byte.toString(AlleleCallCode.BCall.getNumCode())))
         {
             return AlleleCallCode.BCall;
         }
-        else if(genoCall.equals("H") || genoCall.equals("HH"))
+        else if(genoCall.equals("H") || genoCall.equals("HH") ||
+                genoCall.equals(Byte.toString(AlleleCallCode.HCall.getNumCode())))
         {
             return AlleleCallCode.HCall;
         }
-        else if(genoCall.length() == 0 || genoCall.equals("N") || genoCall.equals("-") || genoCall.equals("NN"))
+        else if(genoCall.length() == 0 || genoCall.equals("N") || genoCall.equals("-") || genoCall.equals("NN") ||
+                genoCall.equals(Byte.toString(AlleleCallCode.NCall.getNumCode())))
         {
             return AlleleCallCode.NCall;
         }

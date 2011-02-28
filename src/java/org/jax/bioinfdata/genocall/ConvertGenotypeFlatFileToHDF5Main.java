@@ -29,6 +29,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.jax.util.io.CommonFlatFileFormat;
+import org.jax.util.io.FlatFileFormat;
 import org.jax.util.io.FlatFileReader;
 import org.jax.util.io.IllegalFormatException;
 
@@ -73,9 +74,9 @@ public class ConvertGenotypeFlatFileToHDF5Main
         
         final Option genoFileOption;
         {
-            genoFileOption = new Option("genoinfile", "the genotype input flat file");
+            genoFileOption = new Option("genoinfiles", "the genotype input flat file");
             genoFileOption.setRequired(true);
-            genoFileOption.setArgs(1);
+            genoFileOption.setArgs(Integer.MAX_VALUE);
             genoFileOption.setArgName("file name");
             options.addOption(genoFileOption);
         }
@@ -204,7 +205,7 @@ public class ConvertGenotypeFlatFileToHDF5Main
             }
             else
             {
-                final String genoFileName = commandLine.getOptionValue(genoFileOption.getOpt());
+                final String[] genoFileNames = commandLine.getOptionValues(genoFileOption.getOpt());
                 final String genoInFmtStr = commandLine.getOptionValue(genoInFormatOption.getOpt());
                 final String aColStr = commandLine.getOptionValue(aAlleleOption.getOpt());
                 final String bColStr = commandLine.getOptionValue(bAlleleOption.getOpt());
@@ -216,27 +217,31 @@ public class ConvertGenotypeFlatFileToHDF5Main
                 final String lstGenoColStr = commandLine.getOptionValue(lastGenoColumnOption.getOpt());
                 final String outFileName = commandLine.getOptionValue(outputFileOption.getOpt());
                 
-                final FlatFileReader genoFFR;
+                final FlatFileFormat ffFormat;
                 if(genoInFmtStr == null || genoInFmtStr.trim().toLowerCase().equals("csv"))
                 {
-                    genoFFR = new FlatFileReader(
-                            new FileReader(genoFileName),
-                            CommonFlatFileFormat.CSV_UNIX);
+                    ffFormat = CommonFlatFileFormat.CSV_UNIX;
                 }
                 else if(genoInFmtStr.trim().toLowerCase().equals("tab"))
                 {
-                    genoFFR = new FlatFileReader(
-                            new FileReader(genoFileName),
-                            CommonFlatFileFormat.TAB_DELIMITED_UNIX);
+                    ffFormat = CommonFlatFileFormat.TAB_DELIMITED_UNIX;
                 }
                 else
                 {
                     throw new ParseException("geno file input format must be \"tab\" or \"csv\"");
                 }
                 
+                final FlatFileReader[] genoFFRs = new FlatFileReader[genoFileNames.length];
+                for(int i = 0; i < genoFFRs.length; i++)
+                {
+                    genoFFRs[i] = new FlatFileReader(
+                            new FileReader(genoFileNames[i]),
+                            ffFormat);
+                }
+                
                 GenotypesFlatFile gff = new GenotypesFlatFile();
                 GenotypeCallMatrix genoMat = gff.readGenoCallMatrix(
-                        genoFFR,
+                        genoFFRs,
                         argToIntMinus1(aColStr),
                         argToIntMinus1(bColStr),
                         argToIntMinus1(snpColStr),
@@ -245,7 +250,11 @@ public class ConvertGenotypeFlatFileToHDF5Main
                         bpBuildIDStr,
                         argToIntMinus1(fstGenoColStr),
                         argToInt(lstGenoColStr));
-                genoFFR.close();
+                
+                for(int i = 0; i < genoFFRs.length; i++)
+                {
+                    genoFFRs[i].close();
+                }
                 
                 GenotypesHDF5 ghdf5 = new GenotypesHDF5();
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
