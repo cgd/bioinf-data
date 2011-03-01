@@ -140,7 +140,7 @@ public class ConvertGenotypeHDF5ToFlatFileMain
         catch(ParseException ex)
         {
             HelpFormatter helpFormatter = new HelpFormatter();
-            helpFormatter.printHelp("emmascan", options);
+            helpFormatter.printHelp("hdf5toff", options);
             
             System.exit(-1);
         }

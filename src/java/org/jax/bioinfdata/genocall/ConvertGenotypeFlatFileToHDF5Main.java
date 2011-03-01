@@ -151,7 +151,7 @@ public class ConvertGenotypeFlatFileToHDF5Main
         {
             bpBuildIDOption = new Option(
                     "bpbuild",
-                    "[optional] BP position build identifier (Eg: \"NCBI Build 37\"");
+                    "[optional] BP position build identifier (Eg: \"NCBI Build 37\")");
             bpBuildIDOption.setRequired(false);
             bpBuildIDOption.setArgs(1);
             bpBuildIDOption.setArgName("build identifier");
@@ -275,7 +275,7 @@ public class ConvertGenotypeFlatFileToHDF5Main
         catch(ParseException ex)
         {
             HelpFormatter helpFormatter = new HelpFormatter();
-            helpFormatter.printHelp("emmascan", options);
+            helpFormatter.printHelp("fftohdf5", options);
             
             System.exit(-1);
         }
