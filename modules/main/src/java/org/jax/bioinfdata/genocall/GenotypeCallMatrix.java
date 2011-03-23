@@ -69,7 +69,14 @@ public class GenotypeCallMatrix
     
     public static byte toCallValue(String aAllele, String bAllele, String genoCall) throws IllegalFormatException
     {
-        return toCallCode(aAllele, bAllele, genoCall).getNumCode();
+        if(aAllele == null || bAllele == null)
+        {
+            return Byte.parseByte(genoCall.trim());
+        }
+        else
+        {
+            return toCallCode(aAllele, bAllele, genoCall).getNumCode();
+        }
     }
     
     public static AlleleCallCode toCallCode(String aAllele, String bAllele, String genoCall) throws IllegalFormatException

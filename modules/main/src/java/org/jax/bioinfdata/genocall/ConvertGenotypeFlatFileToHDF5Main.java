@@ -97,7 +97,7 @@ public class ConvertGenotypeFlatFileToHDF5Main
             aAlleleOption = new Option(
                     "aallelecol",
                     "the A allele column # (one-based index)");
-            aAlleleOption.setRequired(true);
+            aAlleleOption.setRequired(false);
             aAlleleOption.setArgs(1);
             aAlleleOption.setArgName("column #");
             options.addOption(aAlleleOption);
@@ -108,7 +108,7 @@ public class ConvertGenotypeFlatFileToHDF5Main
             bAlleleOption = new Option(
                     "ballelecol",
                     "the B allele column # (one-based index)");
-            bAlleleOption.setRequired(true);
+            bAlleleOption.setRequired(false);
             bAlleleOption.setArgs(1);
             bAlleleOption.setArgName("column #");
             options.addOption(bAlleleOption);

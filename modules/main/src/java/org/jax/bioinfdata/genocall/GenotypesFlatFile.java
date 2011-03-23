@@ -54,10 +54,15 @@ public class GenotypesFlatFile
             snpIdIndex = colCount++;
         }
         
-        int aAlleleIndex = colCount++;
+        int aAlleleIndex = -1;
+        int bAlleleIndex = -1;
         char[] aAlleles = genoCalls.getAAlleles();
-        int bAlleleIndex = colCount++;
         char[] bAlleles = genoCalls.getBAlleles();
+        if(aAlleles != null && bAlleles != null)
+        {
+            aAlleleIndex = colCount++;
+            bAlleleIndex = colCount++;
+        }
         
         int chrIndex = -1;
         String[] chrIds = genoCalls.getChrIDs();
@@ -85,8 +90,11 @@ public class GenotypesFlatFile
             currRow[snpIdIndex] = GenotypesHDF5.SNP_IDS_PATH;
         }
         
-        currRow[aAlleleIndex] = GenotypesHDF5.A_ALLELES_PATH;
-        currRow[bAlleleIndex] = GenotypesHDF5.B_ALLELES_PATH;
+        if(aAlleles != null && bAlleles != null)
+        {
+            currRow[aAlleleIndex] = GenotypesHDF5.A_ALLELES_PATH;
+            currRow[bAlleleIndex] = GenotypesHDF5.B_ALLELES_PATH;
+        }
         
         if(chrIds != null)
         {
@@ -115,8 +123,11 @@ public class GenotypesFlatFile
                     currRow[snpIdIndex] = snpIds[rowIndex];
                 }
                 
-                currRow[aAlleleIndex] = Character.toString(aAlleles[rowIndex]);
-                currRow[bAlleleIndex] = Character.toString(bAlleles[rowIndex]);
+                if(aAlleles != null && bAlleles != null)
+                {
+                    currRow[aAlleleIndex] = Character.toString(aAlleles[rowIndex]);
+                    currRow[bAlleleIndex] = Character.toString(bAlleles[rowIndex]);
+                }
                 
                 if(chrIds != null)
                 {
@@ -241,10 +252,15 @@ public class GenotypesFlatFile
             
             while((currRow = flatFileReaders[i].readRow()) != null)
             {
-                String aAllele = currRow[aAlleleColumn];
-                aAlleles.add(aAllele);
-                String bAllele = currRow[bAlleleColumn];
-                bAlleles.add(bAllele);
+                String aAllele = null;
+                String bAllele = null;
+                if(aAlleleColumn >= 0 && bAlleleColumn >= 0)
+                {
+                    aAllele = currRow[aAlleleColumn];
+                    aAlleles.add(aAllele);
+                    bAllele = currRow[bAlleleColumn];
+                    bAlleles.add(bAllele);
+                }
                 
                 if(snpIdValid)
                 {
@@ -275,8 +291,11 @@ public class GenotypesFlatFile
         
         // write the data
         GenotypeCallMatrix genoCalls = new GenotypeCallMatrix();
-        genoCalls.setAAlleles(toChars(aAlleles));
-        genoCalls.setBAlleles(toChars(bAlleles));
+        if(aAlleleColumn >= 0 && bAlleleColumn >= 0)
+        {
+            genoCalls.setAAlleles(toChars(aAlleles));
+            genoCalls.setBAlleles(toChars(bAlleles));
+        }
         genoCalls.setSampleIds(headerStrains);
         genoCalls.setCallMatrix(callValues.toArray(new byte[callValues.size()][]));
         genoCalls.setSnpIds(snpIds.toArray(new String[snpIds.size()]));
