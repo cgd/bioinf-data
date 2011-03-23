@@ -1,0 +1,6 @@
+[submodule "build-common"]
+	path = build-common
+	url = ../build-common
+[submodule "modules/java-util"]
+	path = modules/java-util
+	url = ../java-util
