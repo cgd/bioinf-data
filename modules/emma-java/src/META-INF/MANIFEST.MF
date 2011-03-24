@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Main-Class: org.jax.emma.EMMAAssociationTest
+Class-Path: \
+    lib/activation-2.1.6.jar \
+    lib/commons-cli-1.1.jar \
+    lib/commons-math-1.2.jar \
+    lib/haplotype-inference-1.0.jar \
+    lib/jaxb-api-2.1.6.jar \
+    lib/jaxb-impl-2.1.6.jar \
+    lib/java-util-1.0.jar \
+    lib/jsr173_1.0_api-2.1.6.jar

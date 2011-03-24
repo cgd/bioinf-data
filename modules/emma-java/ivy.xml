@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ivy-module version="2.0">
+    <info organisation="org.jax" module="emma-java" revision="1.0"/>
+    
+    <configurations>
+        <conf
+            name="compile"
+            description="dependencies needed to compile"/>
+        <conf
+            name="test"
+            extends="compile"
+            description="dependencies needed to test"/>
+    </configurations>
+
+    <publications>
+        <artifact name="emma-java" type="jar" ext="jar"/>
+    </publications>
+    
+    <dependencies>
+        <dependency
+            org="org.jax"
+            name="bioinf-data"
+            rev="latest.integration"/>
+        <dependency
+            org="org.jax"
+            name="java-util"
+            rev="latest.integration"/>
+        <dependency
+            org="org.apache"
+            name="commons-cli"
+            rev="latest.integration"/>
+    </dependencies>
+    
+</ivy-module>
