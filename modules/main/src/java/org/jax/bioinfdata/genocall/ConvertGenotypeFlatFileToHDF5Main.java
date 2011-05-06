@@ -85,7 +85,8 @@ public class ConvertGenotypeFlatFileToHDF5Main
         {
             genoInFormatOption = new Option(
                     "genoinformat",
-                    "[optional] the format of the genotype file (must be \"csv\" or \"tab\")");
+                    "[optional] the format of the genotype file (must be \"csv\"" +
+                    " or \"tab\". \"csv\" is the default)");
             genoInFormatOption.setRequired(false);
             genoInFormatOption.setArgs(1);
             genoInFormatOption.setArgName("csv or tab");
@@ -96,7 +97,10 @@ public class ConvertGenotypeFlatFileToHDF5Main
         {
             aAlleleOption = new Option(
                     "aallelecol",
-                    "the A allele column # (one-based index)");
+                    "[optional] the A allele column # (one-based index). If " +
+                    "no A allele column is given then allele codes must be " +
+                    "used in place of nucleotide values where 1 = A allele, " +
+                    "2 = B allele, 3 = Heterozygous, -1 = No Call");
             aAlleleOption.setRequired(false);
             aAlleleOption.setArgs(1);
             aAlleleOption.setArgName("column #");
@@ -107,7 +111,10 @@ public class ConvertGenotypeFlatFileToHDF5Main
         {
             bAlleleOption = new Option(
                     "ballelecol",
-                    "the B allele column # (one-based index)");
+                    "[optional] the B allele column # (one-based index). If " +
+                    "no B allele column is given then allele codes must be " +
+                    "used in place of nucleotide values where 1 = A allele, " +
+                    "2 = B allele, 3 = Heterozygous, -1 = No Call");
             bAlleleOption.setRequired(false);
             bAlleleOption.setArgs(1);
             bAlleleOption.setArgName("column #");

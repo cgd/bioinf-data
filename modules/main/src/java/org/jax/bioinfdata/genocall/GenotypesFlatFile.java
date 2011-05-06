@@ -227,12 +227,9 @@ public class GenotypesFlatFile
         List<byte[]> callValues = new ArrayList<byte[]>();
         List<String> aAlleles = new ArrayList<String>();
         List<String> bAlleles = new ArrayList<String>();
-        boolean snpIdValid = snpIdColumn >= 0;
-        List<String> snpIds = snpIdValid ? new ArrayList<String>() : null;
-        boolean chrValid = chrColumn >= 0;
-        List<String> chrs = chrValid ? new ArrayList<String>() : null;
-        boolean bpPosValid = bpPositionColumn >= 0;
-        List<Long> bpPos = bpPosValid ? new ArrayList<Long>() : null;
+        List<String> snpIds = snpIdColumn >= 0 ? new ArrayList<String>() : null;
+        List<String> chrs = chrColumn >= 0 ? new ArrayList<String>() : null;
+        List<Long> bpPos = bpPositionColumn >= 0 ? new ArrayList<Long>() : null;
         
         for(int i = 0; i < flatFileReaders.length; i++)
         {
@@ -262,17 +259,17 @@ public class GenotypesFlatFile
                     bAlleles.add(bAllele);
                 }
                 
-                if(snpIdValid)
+                if(snpIds != null)
                 {
                     snpIds.add(currRow[snpIdColumn]);
                 }
                 
-                if(chrValid)
+                if(chrs != null)
                 {
                     chrs.add(currRow[chrColumn]);
                 }
                 
-                if(bpPosValid)
+                if(bpPos != null)
                 {
                     bpPos.add(Long.parseLong(currRow[bpPositionColumn]));
                 }
@@ -298,10 +295,114 @@ public class GenotypesFlatFile
         }
         genoCalls.setSampleIds(headerStrains);
         genoCalls.setCallMatrix(callValues.toArray(new byte[callValues.size()][]));
-        genoCalls.setSnpIds(snpIds.toArray(new String[snpIds.size()]));
-        genoCalls.setChrIDs(chrs.toArray(new String[chrs.size()]));
-        genoCalls.setBpPositions(SequenceUtilities.toLongArray(bpPos));
+        if(snpIds != null) genoCalls.setSnpIds(snpIds.toArray(new String[snpIds.size()]));
+        if(chrs != null) genoCalls.setChrIDs(chrs.toArray(new String[chrs.size()]));
+        if(bpPos != null) genoCalls.setBpPositions(SequenceUtilities.toLongArray(bpPos));
         
         return genoCalls;
+    }
+    
+    /**
+     * @param flatFileReader
+     *          the alchemy flat file
+     * @param bpBuildId
+     *          the base pair build identifier (can be null)
+     * @return
+     *          the geno matrix read from the flat file
+     * @throws IllegalFormatException
+     *          if there is a problem with how with how the file is formatted
+     * @throws IOException
+     *          if there is a problem with file IO while reading the flat file
+     */
+    public GenotypeCallMatrix readAlchemyGenoCalls(FlatFileReader flatFileReader, String bpBuildId)
+    throws IllegalFormatException, IOException
+    {
+        final int snpIDCol = 0;
+        final int sampleIDCol = 1;
+        final int abCallCol = 2;
+        final int expectedColCount = 14;
+        
+        // read in the calls and IDs
+        List<String> sampleIDs = new ArrayList<String>();
+        List<String> snpIDs = new ArrayList<String>();
+        List<byte[]> callRows = new ArrayList<byte[]>();
+        List<Byte> currCallRow = new ArrayList<Byte>();
+        String prevSNPId = null;
+        
+        String[] currRow = null;
+        int snpIndex = 0;
+        while((currRow = flatFileReader.readRow()) != null)
+        {
+            if(currRow.length != expectedColCount)
+            {
+                throw new IllegalFormatException(
+                        "Bad row count. Expected " + expectedColCount +
+                        " columns but there were " + currRow.length);
+            }
+            
+            String currSnpID = currRow[snpIDCol];
+            String currSampleID = currRow[sampleIDCol];
+            String currABCall = currRow[abCallCol];
+            
+            if(!currSnpID.equals(prevSNPId))
+            {
+                if(prevSNPId != null)
+                {
+                    callRows.add(SequenceUtilities.toByteArray(currCallRow));
+                    currCallRow.clear();
+                    
+                    snpIndex++;
+                    //if(snpIndex % 1000 == 0)
+                    //{
+                    //    System.out.println("Processing SNP " + snpIndex);
+                    //}
+                }
+                
+                snpIDs.add(currSnpID);
+                prevSNPId = currSnpID;
+            }
+            
+            currCallRow.add(this.alchemyCallToByteCall(currABCall));
+            if(snpIndex == 0)
+            {
+                sampleIDs.add(currSampleID);
+            }
+        }
+        
+        if(prevSNPId == null)
+        {
+            throw new IllegalFormatException(
+                    "Failed to convert: the alchemy file appears to be empty");
+        }
+        
+        // pick up the last row that didn't get added in our while loop
+        callRows.add(SequenceUtilities.toByteArray(currCallRow));
+        
+        GenotypeCallMatrix callMat = new GenotypeCallMatrix();
+        callMat.setCallMatrix(callRows.toArray(new byte[callRows.size()][]));
+        callMat.setBuildId(bpBuildId);
+        callMat.setSampleIds(sampleIDs.toArray(new String[sampleIDs.size()]));
+        callMat.setSnpIds(snpIDs.toArray(new String[snpIDs.size()]));
+        return callMat;
+    }
+
+    private byte alchemyCallToByteCall(String abCall)
+    {
+        if(abCall.equals("AA"))
+        {
+            return 1;
+        }
+        else if(abCall.equals("BB"))
+        {
+            return 2;
+        }
+        else if(abCall.equals("AB"))
+        {
+            return 3;
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unexpected AB call value: " + abCall);
+        }
     }
 }

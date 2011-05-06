@@ -1,13 +1,1 @@
 Manifest-Version: 1.0
-Main-Class: org.jax.haplotype.phylogeny.PhylogenyInference
-Class-Path: \
-    lib/CompatIntervals-0.1.jar \
-    lib/activation-2.0.5.jar \
-    lib/commons-cli-1.1.jar \
-    lib/commons-codec-1.3.jar \
-    lib/jax-util-1.0.jar \
-    lib/jaxb-api-2.0.5.jar \
-    lib/jaxb-impl-2.0.5.jar \
-    lib/jsr173_1.0_api-2.0.5.jar \
-    lib/jython-complete-2.5a1.jar \
-    lib/jython-libraries-2.5a1.jar

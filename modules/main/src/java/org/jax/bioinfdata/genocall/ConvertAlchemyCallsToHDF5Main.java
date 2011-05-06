@@ -18,7 +18,7 @@
 package org.jax.bioinfdata.genocall;
 
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.IOException;
 
 import org.apache.commons.cli.CommandLine;
@@ -29,17 +29,17 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.jax.util.io.CommonFlatFileFormat;
-import org.jax.util.io.FlatFileWriter;
+import org.jax.util.io.FlatFileReader;
 import org.jax.util.io.IllegalFormatException;
 
 import ch.systemsx.cisd.hdf5.HDF5FactoryProvider;
 import ch.systemsx.cisd.hdf5.IHDF5Factory;
-import ch.systemsx.cisd.hdf5.IHDF5Reader;
+import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
 /**
  * @author <A HREF="mailto:keith.sheppard@jax.org">Keith Sheppard</A>
  */
-public class ConvertGenotypeHDF5ToFlatFileMain
+public class ConvertAlchemyCallsToHDF5Main
 {
     /**
      * the main entry point
@@ -63,33 +63,33 @@ public class ConvertGenotypeHDF5ToFlatFileMain
         
         final Option genoFileOption;
         {
-            genoFileOption = new Option("genooutfile", "the genotype output flat file");
+            genoFileOption = new Option("alchemygenos", "the genotype calls output from alchemy");
             genoFileOption.setRequired(true);
             genoFileOption.setArgs(1);
             genoFileOption.setArgName("file name");
             options.addOption(genoFileOption);
         }
         
-        final Option genoOutFormatOption;
+        final Option bpBuildIDOption;
         {
-            genoOutFormatOption = new Option(
-                    "genooutformat",
-                    "[optional] the format of the genotype file (must be \"csv\" or \"tab\")");
-            genoOutFormatOption.setRequired(false);
-            genoOutFormatOption.setArgs(1);
-            genoOutFormatOption.setArgName("csv or tab");
-            options.addOption(genoOutFormatOption);
+            bpBuildIDOption = new Option(
+                    "bpbuild",
+                    "[optional] BP position build identifier (Eg: \"NCBI Build 37\")");
+            bpBuildIDOption.setRequired(false);
+            bpBuildIDOption.setArgs(1);
+            bpBuildIDOption.setArgName("build identifier");
+            options.addOption(bpBuildIDOption);
         }
         
-        final Option hdf5InputFileOption;
+        final Option outputFileOption;
         {
-            hdf5InputFileOption = new Option(
-                    "hdf5in",
-                    "the file to read HDF5 input from");
-            hdf5InputFileOption.setRequired(true);
-            hdf5InputFileOption.setArgs(1);
-            hdf5InputFileOption.setArgName("file name");
-            options.addOption(hdf5InputFileOption);
+            outputFileOption = new Option(
+                    "hdf5out",
+                    "the file to write HDF5 output to");
+            outputFileOption.setRequired(true);
+            outputFileOption.setArgs(1);
+            outputFileOption.setArgName("file name");
+            options.addOption(outputFileOption);
         }
         
         try
@@ -100,47 +100,42 @@ public class ConvertGenotypeHDF5ToFlatFileMain
             if(commandLine.hasOption(helpOption.getOpt()))
             {
                 HelpFormatter helpFormatter = new HelpFormatter();
-                helpFormatter.printHelp("hdf5toff", options);
+                helpFormatter.printHelp("alchtohdf5", options);
             }
             else
             {
                 final String genoFileName = commandLine.getOptionValue(genoFileOption.getOpt());
-                final String genoOutFmtStr = commandLine.getOptionValue(genoOutFormatOption.getOpt());
-                final String hdf5InFileName = commandLine.getOptionValue(hdf5InputFileOption.getOpt());
+                final String bpBuildIDStr = commandLine.getOptionValue(bpBuildIDOption.getOpt());
+                final String outFileName = commandLine.getOptionValue(outputFileOption.getOpt());
+                
+                final FlatFileReader genoFFR = new FlatFileReader(
+                        new FileReader(genoFileName),
+                        CommonFlatFileFormat.TAB_DELIMITED_UNIX);
+                
+                GenotypesFlatFile gff = new GenotypesFlatFile();
+                GenotypeCallMatrix genoMat = gff.readAlchemyGenoCalls(genoFFR, bpBuildIDStr);
+                genoFFR.close();
                 
                 GenotypesHDF5 ghdf5 = new GenotypesHDF5();
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
-                IHDF5Reader hdf5Reader = hdf5Fac.openForReading(new File(hdf5InFileName));
-                GenotypeCallMatrix genoMatrix = ghdf5.readGenoCallMatrix(hdf5Reader);
-                hdf5Reader.close();
-                
-                final FlatFileWriter genoFFW;
-                if(genoOutFmtStr == null || genoOutFmtStr.trim().toLowerCase().equals("csv"))
+                File hdf5File = new File(outFileName);
+                if(hdf5File.exists())
                 {
-                    genoFFW = new FlatFileWriter(
-                            new FileWriter(genoFileName),
-                            CommonFlatFileFormat.CSV_UNIX);
+                    if(!hdf5File.delete())
+                    {
+                        throw new IOException(
+                                "failed to overwrite \"" + outFileName + "\"");
+                    }
                 }
-                else if(genoOutFmtStr.trim().toLowerCase().equals("tab"))
-                {
-                    genoFFW = new FlatFileWriter(
-                            new FileWriter(genoFileName),
-                            CommonFlatFileFormat.TAB_DELIMITED_UNIX);
-                }
-                else
-                {
-                    throw new ParseException("geno file input format must be \"tab\" or \"csv\"");
-                }
-                
-                GenotypesFlatFile gff = new GenotypesFlatFile();
-                gff.writeGenoCallMatrix(genoMatrix, genoFFW);
-                genoFFW.close();
+                IHDF5Writer hdf5Writer = hdf5Fac.open(hdf5File);
+                ghdf5.writeGenoCallMatrix(genoMat, hdf5Writer);
+                hdf5Writer.close();
             }
         }
         catch(ParseException ex)
         {
             HelpFormatter helpFormatter = new HelpFormatter();
-            helpFormatter.printHelp("hdf5toff", options);
+            helpFormatter.printHelp("fftohdf5", options);
             
             System.exit(-1);
         }

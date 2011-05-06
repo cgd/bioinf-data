@@ -64,12 +64,29 @@ public class GenotypeCallMatrix
             }
         };
         
+        public static AlleleCallCode numCodeToEnum(byte numCode)
+        {
+            switch(numCode)
+            {
+                case 1: return ACall;
+                case 2: return BCall;
+                case 3: return HCall;
+                case -1: return NCall;
+                default: throw new IllegalArgumentException(
+                        "invalid numCode: " + numCode);
+            }
+        }
+        
         public abstract byte getNumCode();
     }
     
     public static byte toCallValue(String aAllele, String bAllele, String genoCall) throws IllegalFormatException
     {
-        if(aAllele == null || bAllele == null)
+        if(genoCall.equals("NA"))
+        {
+            return AlleleCallCode.NCall.getNumCode();
+        }
+        else if(aAllele == null || bAllele == null)
         {
             return Byte.parseByte(genoCall.trim());
         }

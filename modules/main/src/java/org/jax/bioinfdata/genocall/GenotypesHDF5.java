@@ -69,8 +69,11 @@ public class GenotypesHDF5
             genoCalls.setSnpIds(hdf5Reader.readStringArray(SNP_IDS_PATH));
         }
         
-        genoCalls.setAAlleles(toChars(hdf5Reader.readStringArray(A_ALLELES_PATH)));
-        genoCalls.setBAlleles(toChars(hdf5Reader.readStringArray(B_ALLELES_PATH)));
+        if(hdf5Reader.exists(A_ALLELES_PATH) && hdf5Reader.exists(B_ALLELES_PATH))
+        {
+            genoCalls.setAAlleles(toChars(hdf5Reader.readStringArray(A_ALLELES_PATH)));
+            genoCalls.setBAlleles(toChars(hdf5Reader.readStringArray(B_ALLELES_PATH)));
+        }
         
         if(hdf5Reader.exists(CHR_IDS_PATH))
         {
@@ -102,9 +105,15 @@ public class GenotypesHDF5
     public void writeGenoCallMatrix(GenotypeCallMatrix genoCalls, IHDF5Writer hdf5Writer)
     {
         // write the data
-        hdf5Writer.writeStringArray(A_ALLELES_PATH, toStrings(genoCalls.getAAlleles()));
-        hdf5Writer.writeStringArray(B_ALLELES_PATH, toStrings(genoCalls.getBAlleles()));
-        hdf5Writer.writeStringArray(SAMPLE_IDS_PATH, genoCalls.getSampleIds());
+        if(genoCalls.getAAlleles() != null && genoCalls.getBAlleles() != null)
+        {
+            hdf5Writer.writeStringArray(A_ALLELES_PATH, toStrings(genoCalls.getAAlleles()));
+            hdf5Writer.writeStringArray(B_ALLELES_PATH, toStrings(genoCalls.getBAlleles()));
+        }
+        if(genoCalls.getSampleIds() != null)
+        {
+            hdf5Writer.writeStringArray(SAMPLE_IDS_PATH, genoCalls.getSampleIds());
+        }
         hdf5Writer.writeByteMatrix(CALL_MATRIX_PATH, genoCalls.getCallMatrix());
         if(genoCalls.getSnpIds() != null)
         {
