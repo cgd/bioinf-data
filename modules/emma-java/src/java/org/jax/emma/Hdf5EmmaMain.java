@@ -17,7 +17,9 @@
 
 package org.jax.emma;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -26,7 +28,13 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.jax.bioinfdata.genocall.GenotypeCallMatrix;
+import org.jax.bioinfdata.genocall.GenotypesHDF5;
 import org.jax.util.io.IllegalFormatException;
+
+import ch.systemsx.cisd.hdf5.HDF5FactoryProvider;
+import ch.systemsx.cisd.hdf5.IHDF5Factory;
+import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
 /**
  * @author <A HREF="mailto:keith.sheppard@jax.org">Keith Sheppard</A>
@@ -137,24 +145,26 @@ public class Hdf5EmmaMain
                     throw new ParseException("sex option cannot be: " + sexStr);
                 }
                 
+                GenotypesHDF5 ghdf5 = new GenotypesHDF5();
+                IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
+                IHDF5Reader hdf5Reader = hdf5Fac.openForReading(new File(genoFileName));
+                GenotypeCallMatrix genoMatrix = ghdf5.readGenoCallMatrix(hdf5Reader);
+                hdf5Reader.close();
+                
                 EMMAAssociationTest emmaTest = new EMMAAssociationTest();
-//                double[] scanResults = emmaTest.emmaScan(
-//                        genoFileName,
-//                        Integer.parseInt(aColStr.trim()) - 1,
-//                        Integer.parseInt(bColStr.trim()) - 1,
-//                        Integer.parseInt(fstGenoColStr.trim()) - 1,
-//                        lstGenoColStr == null ? -1 : Integer.parseInt(lstGenoColStr.trim()),
-//                        phenoFileName,
-//                        phenotype,
-//                        sexToScan);
-//                
-//                PrintStream out = new PrintStream(outFileName);
-//                out.println("pValue");
-//                for(int i = 0; i < scanResults.length; i++)
-//                {
-//                    out.println(scanResults[i]);
-//                }
-//                out.close();
+                double[] scanResults = emmaTest.emmaScan(
+                        genoMatrix,
+                        phenoFileName,
+                        phenotype,
+                        sexToScan);
+                
+                PrintStream out = new PrintStream(outFileName);
+                out.println("pValue");
+                for(int i = 0; i < scanResults.length; i++)
+                {
+                    out.println(scanResults[i]);
+                }
+                out.close();
             }
         }
         catch(ParseException ex)

@@ -17,6 +17,8 @@
 
 package org.jax.emma;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 
@@ -27,6 +29,10 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.jax.bioinfdata.genocall.GenotypeCallMatrix;
+import org.jax.bioinfdata.genocall.GenotypesFlatFile;
+import org.jax.util.io.CommonFlatFileFormat;
+import org.jax.util.io.FlatFileReader;
 import org.jax.util.io.IllegalFormatException;
 
 /**
@@ -182,13 +188,25 @@ public class CsvEmmaMain
                     throw new ParseException("sex option cannot be: " + sexStr);
                 }
                 
-                EMMAAssociationTest emmaTest = new EMMAAssociationTest();
-                double[] scanResults = emmaTest.emmaScan(
-                        genoFileName,
+                FlatFileReader ffr = new FlatFileReader(
+                        new BufferedReader(new FileReader(genoFileName)),
+                        CommonFlatFileFormat.CSV_UNIX);
+                GenotypesFlatFile genoFlatFile = new GenotypesFlatFile();
+                GenotypeCallMatrix genoMat = genoFlatFile.readGenoCallMatrix(
+                        new FlatFileReader[] {ffr},
                         Integer.parseInt(aColStr.trim()) - 1,
                         Integer.parseInt(bColStr.trim()) - 1,
+                        -1,
+                        -1,
+                        -1,
+                        null,
                         Integer.parseInt(fstGenoColStr.trim()) - 1,
-                        lstGenoColStr == null ? -1 : Integer.parseInt(lstGenoColStr.trim()),
+                        lstGenoColStr == null ? -1 : Integer.parseInt(lstGenoColStr.trim()));
+                ffr.close();
+                
+                EMMAAssociationTest emmaTest = new EMMAAssociationTest();
+                double[] scanResults = emmaTest.emmaScan(
+                        genoMat,
                         phenoFileName,
                         phenotype,
                         sexToScan);

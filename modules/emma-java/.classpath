@@ -6,6 +6,7 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/jax-util"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="lib/commons-cli-1.1.jar"/>
+	<classpathentry kind="lib" path="lib/cisd-jhdf5-batteries_included_lin_win_mac-10.06.0.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/bioinf-data"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

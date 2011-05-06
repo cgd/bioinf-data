@@ -18,20 +18,17 @@
 package org.jax.emma;
 
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jax.util.io.CommonFlatFileFormat;
-import org.jax.util.io.FlatFileReader;
+import org.jax.bioinfdata.genocall.GenotypeCallMatrix;
+import org.jax.bioinfdata.genocall.GenotypeCallMatrix.AlleleCallCode;
 import org.jax.util.io.IllegalFormatException;
 import org.jax.util.nativeutil.NativeLibraryUtilities;
 
@@ -43,7 +40,11 @@ public class EMMAAssociationTest
 {
     private static final Logger LOG = Logger.getLogger(EMMAAssociationTest.class.getName());
     
-    private enum AlleleCallCode {ACall, BCall, HCall, NCall}
+    /**
+     * You must have at least this many strains in common between the genotype
+     * and phenotype data before an association test is valid.
+     */
+    public static final int MIN_STRAIN_COUNT = 3;
     
     static
     {
@@ -51,19 +52,9 @@ public class EMMAAssociationTest
     }
     
     /**
-     * Emma scan using flat files
-     * @param genoFileName
-     *          the genotype file
-     * @param aAlleleColumn
-     *          the column index for the A allele
-     * @param bAlleleColumn
-     *          the column index for the B allele
-     * @param firstGenotypeColumn
-     *          the 1st genotype column
-     * @param lastGenotypeColumnExclusive
-     *          the index after the last genotype column. You can use -1 to indicate that
-     *          all of the remaining columns after firstGenotypeColumn are
-     *          genotype columns
+     * Emma scan on the given genotype matrix
+     * @param genoMat
+     *          the genotype matrix
      * @param phenoFileName
      *          the phenotype file
      * @param phenotype
@@ -79,34 +70,12 @@ public class EMMAAssociationTest
      *          if there is a problem with file IO while reading the flat file
      */
     public double[] emmaScan(
-            String genoFileName,
-            int aAlleleColumn,
-            int bAlleleColumn,
-            int firstGenotypeColumn,
-            int lastGenotypeColumnExclusive,
+            GenotypeCallMatrix genoMat,
             String phenoFileName,
             String phenotype,
             SexFilter sexToScan) throws IllegalFormatException, IOException
     {
-        // start with the geno headers
-        FlatFileReader genoFFR = new FlatFileReader(
-                new FileReader(genoFileName),
-                CommonFlatFileFormat.CSV_UNIX);
-        String[] currRow = genoFFR.readRow();
-        if(currRow == null)
-        {
-            throw new IllegalFormatException("Failed to read the header");
-        }
-        
-        if(lastGenotypeColumnExclusive == -1)
-        {
-            lastGenotypeColumnExclusive = currRow.length;
-        }
-        String[] headerStrains = new String[lastGenotypeColumnExclusive - firstGenotypeColumn];
-        for(int i = 0; i < headerStrains.length; i++)
-        {
-            headerStrains[i] = currRow[i + firstGenotypeColumn];
-        }
+        String[] headerStrains = genoMat.getSampleIds();
         
         // now get the strains in common with phenotype data
         MPDIndividualStrainPhenotypeParser phenoParser = new MPDIndividualStrainPhenotypeParser();
@@ -117,19 +86,25 @@ public class EMMAAssociationTest
         Set<String> commonStrainSet = new HashSet<String>(phenoStrains);
         commonStrainSet.retainAll(Arrays.asList(headerStrains));
         int strainCount = commonStrainSet.size();
+        if(strainCount < MIN_STRAIN_COUNT)
+        {
+            throw new IllegalArgumentException(
+                    "In order to perform a haplotype test there must be at least " +
+                    MIN_STRAIN_COUNT + " strains in common between the phenotype " +
+                    "and genotype data but the number of strains found in common " +
+                    "is " + strainCount);
+        }
         String[] commonStrainArray = commonStrainSet.toArray(new String[0]);
         Arrays.sort(commonStrainArray);
         int[] commonStrainIndices = new int[strainCount];
         
         {
-            List<String> headerRowList = Arrays.asList(currRow);
+            List<String> headerList = Arrays.asList(headerStrains);
             for(int i = 0; i < strainCount; i++)
             {
-                commonStrainIndices[i] = headerRowList.indexOf(commonStrainArray[i]);
+                commonStrainIndices[i] = headerList.indexOf(commonStrainArray[i]);
             }
         }
-        
-        // TODO need failure if there are fewer than 3 strains in common
         
         // read the phenotype data
         if(phenotype == null || phenotype.length() == 0)
@@ -177,31 +152,16 @@ public class EMMAAssociationTest
             phenotypeMeans[i] /= currData.size();
         }
         
-        // read the genotype data
-        List<double[]> callValues = new LinkedList<double[]>();
-        while((currRow = genoFFR.readRow()) != null)
+        // flatten the genotype matrix and convert to double
+        byte[][] callMatrix = genoMat.getCallMatrix();
+        double[] flatCallValues = new double[strainCount * callMatrix.length];
+        for(int rowIndex = 0; rowIndex < callMatrix.length; rowIndex++)
         {
-            double[] currSnpGenos = new double[strainCount];
             for(int strainIndex = 0; strainIndex < strainCount; strainIndex++)
             {
-                currSnpGenos[strainIndex] = toCallValue(
-                        currRow[aAlleleColumn],
-                        currRow[bAlleleColumn],
-                        currRow[commonStrainIndices[strainIndex]]);
-            }
-            callValues.add(currSnpGenos);
-        }
-        
-        // flatten the genotype matrix
-        double[] flatCallValues = new double[strainCount * callValues.size()];
-        Iterator<double[]> iter = callValues.iterator();
-        for(int rowIndex = 0; iter.hasNext(); rowIndex++)
-        {
-            double[] currSnpGenos = iter.next();
-            for(int strainIndex = 0; strainIndex < currSnpGenos.length; strainIndex++)
-            {
                 int flatIndex = rowIndex * strainCount + strainIndex;
-                flatCallValues[flatIndex] = currSnpGenos[strainIndex];
+                flatCallValues[flatIndex] = toCallValue(AlleleCallCode.numCodeToEnum(
+                        callMatrix[rowIndex][commonStrainIndices[strainIndex]]));
             }
         }
         
@@ -210,150 +170,18 @@ public class EMMAAssociationTest
         return emmaScan(strainCount, phenotypeMeans, flatCallValues, kinship);
     }
     
-    private double toCallValue(String aAllele, String bAllele, String genoCall) throws IllegalFormatException
+    private double toCallValue(AlleleCallCode callCode)
     {
-        switch(toCallCode(aAllele, bAllele, genoCall))
+        switch(callCode)
         {
             case ACall: return 1.0;
             case BCall: return 0.0;
             case HCall: return 0.5;
             case NCall: return Double.NaN;
-            default:    throw new IllegalStateException("this should never happen");
+            default: throw new IllegalArgumentException(
+                    "unexpected call code: " + callCode);
         }
     }
-    
-    private AlleleCallCode toCallCode(String aAllele, String bAllele, String genoCall) throws IllegalFormatException
-    {
-        aAllele = aAllele.toUpperCase();
-        bAllele = bAllele.toUpperCase();
-        genoCall = genoCall.toUpperCase();
-        if(genoCall.equals(aAllele))
-        {
-            return AlleleCallCode.ACall;
-        }
-        else if(genoCall.equals(bAllele))
-        {
-            return AlleleCallCode.BCall;
-        }
-        else if(genoCall.equals("H") || genoCall.equals("HH"))
-        {
-            return AlleleCallCode.HCall;
-        }
-        else if(genoCall.length() == 0 || genoCall.equals("N") || genoCall.equals("-") || genoCall.equals("NN"))
-        {
-            return AlleleCallCode.NCall;
-        }
-        else
-        {
-            //throw new IllegalFormatException("Unknown genotype: " + genoCall);
-            return AlleleCallCode.NCall;
-        }
-    }
-    
-//    /**
-//     * Calculate the kinship values
-//     * @param genoData
-//     *          the genotype data to base it on
-//     * @param strains
-//     *          a map of strain names
-//     * @return
-//     *          the kinship
-//     * @throws
-//     *          IOException
-//     */
-//    public double[] calculateKinship(
-//            GenomeDataSource genoData,
-//            Set<String> strains)
-//    throws IOException
-//    {
-//        strains = new HashSet<String>(strains);
-//        strains.retainAll(genoData.getAvailableStrains());
-//        String[] commonStrains = strains.toArray(new String[0]);
-//        Arrays.sort(commonStrains);
-//        int strainCount = commonStrains.length;
-//        
-//        int snpCount = 0;
-//        for(ChromosomeDataSource currChr : genoData.getChromosomeDataSources().values())
-//        {
-//            snpCount += currChr.getSnpPositionInputStream().getSnpCount();
-//        }
-//        
-//        double[] genos = new double[snpCount * strainCount];
-//        int currStartIndex = 0;
-//        for(ChromosomeDataSource currChr : genoData.getChromosomeDataSources().values())
-//        {
-//            SdpInputStream sdpStream = currChr.getSdpInputStream(commonStrains);
-//            int currSnpCount = (int)currChr.getSnpPositionInputStream().getSnpCount();
-//            for(int i = 0; i < currSnpCount; i++)
-//            {
-//                int currSnp = currStartIndex + i;
-//                BitSet currSdp = sdpStream.getNextSdp();
-//                for(int strainIndex = 0; strainIndex < strainCount; strainIndex++)
-//                {
-//                    double currCall = currSdp.get(strainIndex) ? 1.0 : 0.0;
-//                    genos[currSnp * strainCount + strainIndex] = currCall;
-//                }
-//            }
-//        }
-//        
-//        return calculateKinship(strainCount, genos);
-//    }
-//    
-//    /**
-//     * Perform a scan on the given chromosome using EMMA
-//     * @param chrDataSource
-//     *          the chromosome data source
-//     * @param phenotypeDataSource
-//     *          the phenotype data source
-//     * @param kinship
-//     *          the kinship matrix (if null it's calculated based on data)
-//     * @return
-//     *          the p-values
-//     * @throws IOException
-//     */
-//    public double[] emmaScan(
-//            ChromosomeDataSource chrDataSource,
-//            PhenotypeDataSource phenotypeDataSource,
-//            double[] kinship)
-//            throws IOException
-//    {
-//        int snpCount = (int)chrDataSource.getSnpPositionInputStream().getSnpCount();
-//        Map<String, List<Double>> phenotypeDataMap = phenotypeDataSource.getPhenotypeData();
-//        phenotypeDataMap.keySet().retainAll(chrDataSource.getAvailableStrains());
-//        String[] commonStrains = phenotypeDataMap.keySet().toArray(new String[0]);
-//        Arrays.sort(commonStrains);
-//        int strainCount = commonStrains.length;
-//        
-//        String[] sortedCommonStrains = phenotypeDataMap.keySet().toArray(
-//                new String[phenotypeDataMap.size()]);
-//        Arrays.sort(sortedCommonStrains);
-//        
-//        double[] genos = new double[snpCount * strainCount];
-//        SdpInputStream sdpStream = chrDataSource.getSdpInputStream(commonStrains); // TODO FIXME
-//        for(int snpIndex = 0; snpIndex < snpCount; snpIndex++)
-//        {
-//            BitSet currSDP = sdpStream.getNextSdp();
-//            for(int strainIndex = 0; strainIndex < strainCount; strainIndex++)
-//            {
-//                double currCall = currSDP.get(strainIndex) ? 1.0 : 0.0;
-//                genos[snpIndex * strainCount + strainIndex] = currCall;
-//            }
-//        }
-//        
-//        if(kinship == null)
-//        {
-//            kinship = calculateKinship(strainCount, genos);
-//        }
-//        
-//        double[] phenotypeMeans = new double[strainCount];
-//        for(int strainIndex = 0; strainIndex < strainCount; strainIndex++)
-//        {
-//            phenotypeMeans[strainIndex] = StatisticUtilities.calculateMean(
-//                    phenotypeDataMap.get(commonStrains[strainIndex]));
-//        }
-//        
-//        return emmaScan(strainCount, phenotypeMeans, genos, kinship);
-//    }
     
     /**
      * Native function for performing an EMMA scan

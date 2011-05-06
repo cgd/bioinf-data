@@ -4,5 +4,20 @@
 set -o errexit
 #set -o nounset
 
-./emmascan.bash -aallelecol 2 -ballelecol 3 -firstgenocol 6 -genofile ~/projects/emma-scripts/PopulationData/popdataSep09schr19.csv -phenofile ~/projects/emma-scripts/bone-mineral-density.txt -out scanout.txt
+echo "scanning the CSV directly"
+./emmascan.bash \
+    -aallelecol 2 -ballelecol 3 -firstgenocol 6 \
+    -genofile ~/projects/emma-scripts/PopulationData/popdataSep09schr19.csv \
+    -phenofile ~/projects/emma-scripts/bone-mineral-density.txt -out chr19-csv-scanout.txt
+
+echo "converting CSV to HDF5 format"
+./fftohdf5.bash \
+    -genoinfiles ~/projects/emma-scripts/PopulationData/popdataSep09schr19.csv \
+    -aallelecol 2 -ballelecol 3 \
+    -snpcol 1 -chrcol 4 -poscol 5 -bpbuild NCBIBuild37 -firstgenocol 6 -hdf5out popdata-chr19.h5
+
+echo "scanning the HDF5"
+./hdf5emmascan.bash \
+    -genofile "popdata-chr19.h5" \
+    -phenofile ~/projects/emma-scripts/bone-mineral-density.txt -out chr19-hdf5-scanout.txt
 
