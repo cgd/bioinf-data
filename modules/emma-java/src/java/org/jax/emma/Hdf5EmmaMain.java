@@ -17,9 +17,10 @@
 
 package org.jax.emma;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintStream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -30,6 +31,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.jax.bioinfdata.genocall.GenotypeCallMatrix;
 import org.jax.bioinfdata.genocall.GenotypesHDF5;
+import org.jax.util.io.CommonFlatFileFormat;
+import org.jax.util.io.FlatFileWriter;
 import org.jax.util.io.IllegalFormatException;
 
 import ch.systemsx.cisd.hdf5.HDF5FactoryProvider;
@@ -158,13 +161,32 @@ public class Hdf5EmmaMain
                         phenotype,
                         sexToScan);
                 
-                PrintStream out = new PrintStream(outFileName);
-                out.println("pValue");
+                FlatFileWriter ffw = new FlatFileWriter(
+                        new BufferedWriter(new FileWriter(outFileName)),
+                        CommonFlatFileFormat.TAB_DELIMITED_UNIX);
+                String[] snpIds = genoMatrix.getSnpIds();
+                if(snpIds == null)
+                {
+                    ffw.writeRow(new String[] {"pValue"});
+                }
+                else
+                {
+                    ffw.writeRow(new String[] {"snpIdentifier", "pValue"});
+                }
+                
                 for(int i = 0; i < scanResults.length; i++)
                 {
-                    out.println(scanResults[i]);
+                    String pValStr = Double.toString(scanResults[i]);
+                    if(snpIds == null)
+                    {
+                        ffw.writeRow(new String[] {pValStr});
+                    }
+                    else
+                    {
+                        ffw.writeRow(new String[] {snpIds[i], pValStr});
+                    }
                 }
-                out.close();
+                ffw.close();
             }
         }
         catch(ParseException ex)
