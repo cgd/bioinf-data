@@ -11,7 +11,7 @@ echo "scanning the CSV directly"
     -phenofile ~/projects/emma-scripts/bone-mineral-density.txt -out chr19-csv-scanout.txt
 
 echo "converting CSV to HDF5 format"
-./fftohdf5.bash \
+../main/fftohdf5.bash \
     -genoinfiles ~/projects/emma-scripts/PopulationData/popdataSep09schr19.csv \
     -aallelecol 2 -ballelecol 3 \
     -snpcol 1 -chrcol 4 -poscol 5 -bpbuild NCBIBuild37 -firstgenocol 6 -hdf5out popdata-chr19.h5
