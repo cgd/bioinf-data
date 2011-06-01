@@ -3,6 +3,7 @@
 # exit on error and don't allow the use of unset variables
 set -o errexit
 #set -o nounset
+set +x
 
 echo "scanning the CSV directly"
 ./emmascan.bash \
@@ -20,4 +21,12 @@ echo "scanning the HDF5"
 ./hdf5emmascan.bash \
     -genofile "popdata-chr19.h5" \
     -phenofile ~/projects/emma-scripts/bone-mineral-density.txt -out chr19-hdf5-scanout.txt
+./hdf5emmascan.bash \
+    -sex male \
+    -genofile "popdata-chr19.h5" \
+    -phenofile ~/projects/emma-scripts/bone-mineral-density.txt -out chr19-hdf5-scanout-male.txt
+./hdf5emmascan.bash \
+    -sex female \
+    -genofile "popdata-chr19.h5" \
+    -phenofile ~/projects/emma-scripts/bone-mineral-density.txt -out chr19-hdf5-scanout-female.txt
 

@@ -79,8 +79,27 @@ public class EMMAAssociationTest
         
         // now get the strains in common with phenotype data
         MPDIndividualStrainPhenotypeParser phenoParser = new MPDIndividualStrainPhenotypeParser();
-        FileInputStream phenoIn = new FileInputStream(phenoFileName);
-        Set<String> phenoStrains = phenoParser.parseAvailableStrainNames(phenoIn);
+        FileInputStream phenoIn;
+        if(phenotype == null || phenotype.length() == 0)
+        {
+            phenoIn = new FileInputStream(phenoFileName);
+            Set<String> phenos = phenoParser.parseAvailablePhenotypes(phenoIn);
+            phenoIn.close();
+            
+            if(phenos.size() != 1)
+            {
+                throw new IllegalFormatException();
+            }
+            else
+            {
+                phenotype = phenos.iterator().next();
+            }
+        }
+        phenoIn = new FileInputStream(phenoFileName);
+        Set<String> phenoStrains = phenoParser.parseAvailableStrainNames(
+                phenotype,
+                phenoIn,
+                sexToScan);
         phenoIn.close();
         
         Set<String> commonStrainSet = new HashSet<String>(phenoStrains);
@@ -107,22 +126,6 @@ public class EMMAAssociationTest
         }
         
         // read the phenotype data
-        if(phenotype == null || phenotype.length() == 0)
-        {
-            phenoIn = new FileInputStream(phenoFileName);
-            Set<String> phenos = phenoParser.parseAvailablePhenotypes(phenoIn);
-            phenoIn.close();
-            
-            if(phenos.size() != 1)
-            {
-                throw new IllegalFormatException();
-            }
-            else
-            {
-                phenotype = phenos.iterator().next();
-            }
-        }
-        
         if(LOG.isLoggable(Level.FINE))
         {
             LOG.fine("the phenotype is: " + phenotype);

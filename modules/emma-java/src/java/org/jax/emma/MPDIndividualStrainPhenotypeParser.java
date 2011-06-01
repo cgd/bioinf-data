@@ -62,6 +62,27 @@ public class MPDIndividualStrainPhenotypeParser
      */
     public Set<String> parseAvailableStrainNames(InputStream is) throws IOException
     {
+        return this.parseAvailableStrainNames(null, is, SexFilter.AGNOSTIC);
+    }
+    
+    /**
+     * Get available strain names from the stream.
+     * @param phenotypeToParse
+     *          the phenotype to get available strains for (null indicates all)
+     * @param is
+     *          the stream to parse
+     * @param sexFilter
+     *          the sex to get available strains for
+     * @return
+     *          the available phenotypes
+     * @throws IOException
+     *          if we catch an exception from the stream
+     */
+    public Set<String> parseAvailableStrainNames(
+            String phenotypeToParse,
+            InputStream is,
+            SexFilter sexFilter) throws IOException
+    {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         
         String[] headerArray = null;
@@ -101,7 +122,11 @@ public class MPDIndividualStrainPhenotypeParser
         String[] currLine;
         while((currLine = this.tabDelimitedParser.parseCharacterDelimitedLine(reader)) != null)
         {
-            strainNames.add(currLine[strainNameIndex]);
+            if((phenotypeToParse == null || phenotypeToParse.equals(currLine[phenotypeNameIndex])) &&
+               (sexFilter == null || this.matchesSexFilter(sexFilter, currLine[sexColumnIndex])))
+            {
+                strainNames.add(currLine[strainNameIndex]);
+            }
         }
         
         return strainNames;
@@ -257,19 +282,9 @@ public class MPDIndividualStrainPhenotypeParser
         {
             // filter on values
             String sex = currLine[sexColumnIndex];
-            if(sexFilter == SexFilter.ALLOW_FEMALE)
+            if(!this.matchesSexFilter(sexFilter, sex))
             {
-                if(!sex.toLowerCase().startsWith("f"))
-                {
-                    continue;
-                }
-            }
-            else if(sexFilter == SexFilter.ALLOW_MALE)
-            {
-                if(!sex.toLowerCase().startsWith("m"))
-                {
-                    continue;
-                }
+                continue;
             }
             
             // get the phenotype name
@@ -301,5 +316,18 @@ public class MPDIndividualStrainPhenotypeParser
         }
         
         return strainNameToPhenotypeValuesMap;
+    }
+    
+    private boolean matchesSexFilter(SexFilter sexFilter, String sexString)
+    {
+        switch(sexFilter)
+        {
+            case AGNOSTIC: return true;
+            case ALLOW_FEMALE: return sexString.toLowerCase().startsWith("f");
+            case ALLOW_MALE: return sexString.toLowerCase().startsWith("m");
+        }
+        
+        // we should never reach this point
+        return false;
     }
 }
