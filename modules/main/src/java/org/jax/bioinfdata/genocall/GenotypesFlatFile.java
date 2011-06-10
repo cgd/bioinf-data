@@ -42,7 +42,7 @@ public class GenotypesFlatFile
      *          if anything goes wrong while writing
      */
     public void writeGenoCallMatrix(
-            GenotypeCallMatrix genoCalls,
+            AbstractGenotypeCallMatrix genoCalls,
             FlatFileWriter flatFileWriter) throws IOException
     {
         int colCount = 0;
@@ -87,23 +87,23 @@ public class GenotypesFlatFile
         String[] currRow = new String[colCount];
         if(snpIds != null)
         {
-            currRow[snpIdIndex] = GenotypesHDF5.SNP_IDS_PATH;
+            currRow[snpIdIndex] = AbstractGenotypeCallMatrix.SNP_IDS_NAME;
         }
         
         if(aAlleles != null && bAlleles != null)
         {
-            currRow[aAlleleIndex] = GenotypesHDF5.A_ALLELES_PATH;
-            currRow[bAlleleIndex] = GenotypesHDF5.B_ALLELES_PATH;
+            currRow[aAlleleIndex] = AbstractGenotypeCallMatrix.A_ALLELES_NAME;
+            currRow[bAlleleIndex] = AbstractGenotypeCallMatrix.B_ALLELES_NAME;
         }
         
         if(chrIds != null)
         {
-            currRow[chrIndex] = GenotypesHDF5.CHR_IDS_PATH;
+            currRow[chrIndex] = AbstractGenotypeCallMatrix.CHR_IDS_NAME;
         }
         
         if(bpPos != null)
         {
-            currRow[posIndex] = GenotypesHDF5.BP_POSITIONS_PATH;
+            currRow[posIndex] = AbstractGenotypeCallMatrix.BP_POSITIONS_NAME;
         }
         
         for(int i = 0; i < sampleIds.length; i++)
@@ -305,8 +305,6 @@ public class GenotypesFlatFile
     /**
      * @param flatFileReader
      *          the alchemy flat file
-     * @param bpBuildId
-     *          the base pair build identifier (can be null)
      * @return
      *          the geno matrix read from the flat file
      * @throws IllegalFormatException
@@ -314,7 +312,7 @@ public class GenotypesFlatFile
      * @throws IOException
      *          if there is a problem with file IO while reading the flat file
      */
-    public GenotypeCallMatrix readAlchemyGenoCalls(FlatFileReader flatFileReader, String bpBuildId)
+    public GenotypeCallMatrix readAlchemyGenoCalls(FlatFileReader flatFileReader)
     throws IllegalFormatException, IOException
     {
         final int snpIDCol = 0;
@@ -380,7 +378,6 @@ public class GenotypesFlatFile
         
         GenotypeCallMatrix callMat = new GenotypeCallMatrix();
         callMat.setCallMatrix(callRows.toArray(new byte[callRows.size()][]));
-        callMat.setBuildId(bpBuildId);
         callMat.setSampleIds(sampleIDs.toArray(new String[sampleIDs.size()]));
         callMat.setSnpIds(snpIDs.toArray(new String[snpIDs.size()]));
         return callMat;

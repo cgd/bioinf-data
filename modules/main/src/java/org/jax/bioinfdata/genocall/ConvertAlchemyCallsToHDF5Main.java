@@ -70,17 +70,6 @@ public class ConvertAlchemyCallsToHDF5Main
             options.addOption(genoFileOption);
         }
         
-        final Option bpBuildIDOption;
-        {
-            bpBuildIDOption = new Option(
-                    "bpbuild",
-                    "[optional] BP position build identifier (Eg: \"NCBI Build 37\")");
-            bpBuildIDOption.setRequired(false);
-            bpBuildIDOption.setArgs(1);
-            bpBuildIDOption.setArgName("build identifier");
-            options.addOption(bpBuildIDOption);
-        }
-        
         final Option outputFileOption;
         {
             outputFileOption = new Option(
@@ -105,7 +94,6 @@ public class ConvertAlchemyCallsToHDF5Main
             else
             {
                 final String genoFileName = commandLine.getOptionValue(genoFileOption.getOpt());
-                final String bpBuildIDStr = commandLine.getOptionValue(bpBuildIDOption.getOpt());
                 final String outFileName = commandLine.getOptionValue(outputFileOption.getOpt());
                 
                 final FlatFileReader genoFFR = new FlatFileReader(
@@ -113,10 +101,9 @@ public class ConvertAlchemyCallsToHDF5Main
                         CommonFlatFileFormat.TAB_DELIMITED_UNIX);
                 
                 GenotypesFlatFile gff = new GenotypesFlatFile();
-                GenotypeCallMatrix genoMat = gff.readAlchemyGenoCalls(genoFFR, bpBuildIDStr);
+                GenotypeCallMatrix genoMat = gff.readAlchemyGenoCalls(genoFFR);
                 genoFFR.close();
                 
-                GenotypesHDF5 ghdf5 = new GenotypesHDF5();
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
                 File hdf5File = new File(outFileName);
                 if(hdf5File.exists())
@@ -128,7 +115,8 @@ public class ConvertAlchemyCallsToHDF5Main
                     }
                 }
                 IHDF5Writer hdf5Writer = hdf5Fac.open(hdf5File);
-                ghdf5.writeGenoCallMatrix(genoMat, hdf5Writer);
+                HDF5GenotypeCallMatrix hdf5GenoMat = new HDF5GenotypeCallMatrix(hdf5Writer);
+                AbstractGenotypeCallMatrix.copyGenoMatrix(genoMat, hdf5GenoMat);
                 hdf5Writer.close();
             }
         }

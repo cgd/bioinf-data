@@ -27,8 +27,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jax.bioinfdata.genocall.GenotypeCallMatrix;
-import org.jax.bioinfdata.genocall.GenotypeCallMatrix.AlleleCallCode;
+import org.jax.bioinfdata.genocall.AbstractGenotypeCallMatrix;
 import org.jax.util.io.IllegalFormatException;
 import org.jax.util.nativeutil.NativeLibraryUtilities;
 
@@ -70,7 +69,7 @@ public class EMMAAssociationTest
      *          if there is a problem with file IO while reading the flat file
      */
     public double[] emmaScan(
-            GenotypeCallMatrix genoMat,
+            AbstractGenotypeCallMatrix genoMat,
             String phenoFileName,
             String phenotype,
             SexFilter sexToScan) throws IllegalFormatException, IOException
@@ -163,8 +162,8 @@ public class EMMAAssociationTest
             for(int strainIndex = 0; strainIndex < strainCount; strainIndex++)
             {
                 int flatIndex = rowIndex * strainCount + strainIndex;
-                flatCallValues[flatIndex] = toCallValue(AlleleCallCode.numCodeToEnum(
-                        callMatrix[rowIndex][commonStrainIndices[strainIndex]]));
+                flatCallValues[flatIndex] = toCallValue(
+                        callMatrix[rowIndex][commonStrainIndices[strainIndex]]);
             }
         }
         
@@ -173,16 +172,15 @@ public class EMMAAssociationTest
         return emmaScan(strainCount, phenotypeMeans, flatCallValues, kinship);
     }
     
-    private double toCallValue(AlleleCallCode callCode)
+    private double toCallValue(byte callCode)
     {
         switch(callCode)
         {
-            case ACall: return 1.0;
-            case BCall: return 0.0;
-            case HCall: return 0.5;
-            case NCall: return Double.NaN;
-            default: throw new IllegalArgumentException(
-                    "unexpected call code: " + callCode);
+            case AbstractGenotypeCallMatrix.A_CALL_CODE: return 1.0;
+            case AbstractGenotypeCallMatrix.B_CALL_CODE: return 0.0;
+            case AbstractGenotypeCallMatrix.H_CALL_CODE: return 0.5;
+            case AbstractGenotypeCallMatrix.N_CALL_CODE: return Double.NaN;
+            default: throw new IllegalArgumentException("unexpected call code: " + callCode);
         }
     }
     

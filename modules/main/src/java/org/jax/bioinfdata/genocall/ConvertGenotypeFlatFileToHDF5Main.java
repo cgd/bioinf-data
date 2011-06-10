@@ -263,7 +263,6 @@ public class ConvertGenotypeFlatFileToHDF5Main
                     genoFFRs[i].close();
                 }
                 
-                GenotypesHDF5 ghdf5 = new GenotypesHDF5();
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
                 File hdf5File = new File(outFileName);
                 if(hdf5File.exists())
@@ -275,7 +274,8 @@ public class ConvertGenotypeFlatFileToHDF5Main
                     }
                 }
                 IHDF5Writer hdf5Writer = hdf5Fac.open(hdf5File);
-                ghdf5.writeGenoCallMatrix(genoMat, hdf5Writer);
+                HDF5GenotypeCallMatrix hdf5GenoMat = new HDF5GenotypeCallMatrix(hdf5Writer);
+                AbstractGenotypeCallMatrix.copyGenoMatrix(genoMat, hdf5GenoMat);
                 hdf5Writer.close();
             }
         }

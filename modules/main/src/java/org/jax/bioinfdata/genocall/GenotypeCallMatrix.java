@@ -17,116 +17,13 @@
 
 package org.jax.bioinfdata.genocall;
 
-import org.jax.util.io.IllegalFormatException;
-
 /**
  * An object for holding data describing a genotype call matrix. Most uses will
  * require that both sampleIds and callMatrix are set to a non-null value.
  * @author <A HREF="mailto:keith.sheppard@jax.org">Keith Sheppard</A>
  */
-public class GenotypeCallMatrix
+public class GenotypeCallMatrix extends AbstractGenotypeCallMatrix
 {
-    public enum AlleleCallCode
-    {
-        ACall
-        {
-            @Override
-            public byte getNumCode()
-            {
-                return 1;
-            }
-        },
-        
-        BCall
-        {
-            @Override
-            public byte getNumCode()
-            {
-                return 2;
-            }
-        },
-        
-        HCall
-        {
-            @Override
-            public byte getNumCode()
-            {
-                return 3;
-            }
-        },
-        
-        NCall
-        {
-            @Override
-            public byte getNumCode()
-            {
-                return -1;
-            }
-        };
-        
-        public static AlleleCallCode numCodeToEnum(byte numCode)
-        {
-            switch(numCode)
-            {
-                case 1: return ACall;
-                case 2: return BCall;
-                case 3: return HCall;
-                case -1: return NCall;
-                default: throw new IllegalArgumentException(
-                        "invalid numCode: " + numCode);
-            }
-        }
-        
-        public abstract byte getNumCode();
-    }
-    
-    public static byte toCallValue(String aAllele, String bAllele, String genoCall) throws IllegalFormatException
-    {
-        if(genoCall.equals("NA"))
-        {
-            return AlleleCallCode.NCall.getNumCode();
-        }
-        else if(aAllele == null || bAllele == null)
-        {
-            return Byte.parseByte(genoCall.trim());
-        }
-        else
-        {
-            return toCallCode(aAllele, bAllele, genoCall).getNumCode();
-        }
-    }
-    
-    public static AlleleCallCode toCallCode(String aAllele, String bAllele, String genoCall) throws IllegalFormatException
-    {
-        aAllele = aAllele.toUpperCase();
-        bAllele = bAllele.toUpperCase();
-        genoCall = genoCall.toUpperCase();
-        if(genoCall.equals(aAllele) ||
-           genoCall.equals(Byte.toString(AlleleCallCode.ACall.getNumCode())))
-        {
-            return AlleleCallCode.ACall;
-        }
-        else if(genoCall.equals(bAllele) ||
-                genoCall.equals(Byte.toString(AlleleCallCode.BCall.getNumCode())))
-        {
-            return AlleleCallCode.BCall;
-        }
-        else if(genoCall.equals("H") || genoCall.equals("HH") ||
-                genoCall.equals(Byte.toString(AlleleCallCode.HCall.getNumCode())))
-        {
-            return AlleleCallCode.HCall;
-        }
-        else if(genoCall.length() == 0 || genoCall.equals("N") || genoCall.equals("-") || genoCall.equals("NN") ||
-                genoCall.equals(Byte.toString(AlleleCallCode.NCall.getNumCode())))
-        {
-            return AlleleCallCode.NCall;
-        }
-        else
-        {
-            return AlleleCallCode.NCall;
-        }
-    }
-
     private char[] aAlleles;
     private char[] bAlleles;
     private String[] sampleIds;
@@ -136,83 +33,166 @@ public class GenotypeCallMatrix
     private long[] bpPositions;
     private String buildId;
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public char[] getAAlleles()
     {
         return this.aAlleles;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setAAlleles(char[] aAlleles)
     {
         this.aAlleles = aAlleles;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public char[] getBAlleles()
     {
         return this.bAlleles;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setBAlleles(char[] bAlleles)
     {
         this.bAlleles = bAlleles;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String[] getSampleIds()
     {
         return this.sampleIds;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setSampleIds(String[] sampleIds)
     {
         this.sampleIds = sampleIds;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public byte[][] getCallMatrix()
     {
         return this.callMatrix;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setCallMatrix(byte[][] callMatrix)
     {
         this.callMatrix = callMatrix;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getSNPCount()
+    {
+        return this.callMatrix.length;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String[] getSnpIds()
     {
         return this.snpIds;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setSnpIds(String[] snpIds)
     {
         this.snpIds = snpIds;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String[] getChrIDs()
     {
         return this.chrIDs;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setChrIDs(String[] chrIDs)
     {
         this.chrIDs = chrIDs;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public long[] getBpPositions()
     {
         return this.bpPositions;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setBpPositions(long[] bpPositions)
     {
         this.bpPositions = bpPositions;
     }
     
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setBpPositions(long[] bpPositions, String buildId)
+    {
+        this.bpPositions = bpPositions;
+        this.buildId = buildId;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String getBuildId()
     {
         return this.buildId;
     }
     
-    public void setBuildId(String buildId)
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public byte[] getSNPCalls(long snpIndex)
     {
-        this.buildId = buildId;
+        return this.callMatrix[(int)snpIndex];
     }
 }

@@ -29,8 +29,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.jax.bioinfdata.genocall.GenotypeCallMatrix;
-import org.jax.bioinfdata.genocall.GenotypesHDF5;
+import org.jax.bioinfdata.genocall.HDF5GenotypeCallMatrix;
 import org.jax.util.io.CommonFlatFileFormat;
 import org.jax.util.io.FlatFileWriter;
 import org.jax.util.io.IllegalFormatException;
@@ -148,11 +147,9 @@ public class Hdf5EmmaMain
                     throw new ParseException("sex option cannot be: " + sexStr);
                 }
                 
-                GenotypesHDF5 ghdf5 = new GenotypesHDF5();
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
                 IHDF5Reader hdf5Reader = hdf5Fac.openForReading(new File(genoFileName));
-                GenotypeCallMatrix genoMatrix = ghdf5.readGenoCallMatrix(hdf5Reader);
-                hdf5Reader.close();
+                HDF5GenotypeCallMatrix genoMatrix = new HDF5GenotypeCallMatrix(hdf5Reader);
                 
                 EMMAAssociationTest emmaTest = new EMMAAssociationTest();
                 double[] scanResults = emmaTest.emmaScan(
@@ -187,6 +184,7 @@ public class Hdf5EmmaMain
                     }
                 }
                 ffw.close();
+                hdf5Reader.close();
             }
         }
         catch(ParseException ex)

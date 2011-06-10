@@ -108,11 +108,9 @@ public class ConvertGenotypeHDF5ToFlatFileMain
                 final String genoOutFmtStr = commandLine.getOptionValue(genoOutFormatOption.getOpt());
                 final String hdf5InFileName = commandLine.getOptionValue(hdf5InputFileOption.getOpt());
                 
-                GenotypesHDF5 ghdf5 = new GenotypesHDF5();
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
                 IHDF5Reader hdf5Reader = hdf5Fac.openForReading(new File(hdf5InFileName));
-                GenotypeCallMatrix genoMatrix = ghdf5.readGenoCallMatrix(hdf5Reader);
-                hdf5Reader.close();
+                HDF5GenotypeCallMatrix hdf5GenoMatrix = new HDF5GenotypeCallMatrix(hdf5Reader);
                 
                 final FlatFileWriter genoFFW;
                 if(genoOutFmtStr == null || genoOutFmtStr.trim().toLowerCase().equals("csv"))
@@ -133,7 +131,8 @@ public class ConvertGenotypeHDF5ToFlatFileMain
                 }
                 
                 GenotypesFlatFile gff = new GenotypesFlatFile();
-                gff.writeGenoCallMatrix(genoMatrix, genoFFW);
+                gff.writeGenoCallMatrix(hdf5GenoMatrix, genoFFW);
+                hdf5Reader.close();
                 genoFFW.close();
             }
         }
