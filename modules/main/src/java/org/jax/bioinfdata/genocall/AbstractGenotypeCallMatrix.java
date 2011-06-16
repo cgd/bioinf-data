@@ -17,6 +17,10 @@
 
 package org.jax.bioinfdata.genocall;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Abstract representation of a genotype matrix.
@@ -38,56 +42,106 @@ public abstract class AbstractGenotypeCallMatrix
     public static final byte H_CALL_CODE = 3;
     public static final byte N_CALL_CODE = -1;
     
+    private static final List<String> NUC_CODES = Arrays.asList("G", "A", "T", "C");
+    
     /**
-     * Convert the given genoCall string into a byte value.
+     * Convert the given genoCalls strings into a byte array.
      * @param aAllele
-     *          call representing an A allele for the SNP in question
+     *          call representing an A allele for the SNPs in question (can be null)
      * @param bAllele
-     *          call representing a B allele for the SNP in question
-     * @param genoCall
+     *          call representing a B allele for the SNPs in question (can be null)
+     * @param genoCalls
      *          the call string
-     * @return the byte representation of the call
+     * @return
+     *          the byte representation of the call
      */
-    public static byte toCallValue(String aAllele, String bAllele, String genoCall)
+    public static byte[] toCallValues(String aAllele, String bAllele, String[] genoCalls)
     {
-        if(genoCall.equals("NA"))
+        if(aAllele == null || bAllele == null)
         {
-            return N_CALL_CODE;
-        }
-        else if(aAllele == null || bAllele == null)
-        {
-            return Byte.parseByte(genoCall.trim());
+            // we don't have A or B alleles to match against. First see if
+            // everything is encoded according to it's byte code
+            try
+            {
+                return toCallValuesWithoutAB(genoCalls);
+            }
+            catch(NumberFormatException ex)
+            {
+                // we failed to encode using a byte code so we will fall
+                // back on trying to encode with nucleotide values
+                Set<String> nucCodesInSNP = new HashSet<String>(4);
+                for(int i = 0; i < genoCalls.length; i++)
+                {
+                    String genoCall = genoCalls[i].toUpperCase();
+                    if(NUC_CODES.contains(genoCall))
+                    {
+                        nucCodesInSNP.add(genoCall);
+                    }
+                }
+                
+                if(nucCodesInSNP.size() == 2)
+                {
+                    // we can't do anything with this SNP unless we have
+                    // exactly 2 calls
+                    String[] codes = nucCodesInSNP.toArray(new String[2]);
+                    return toCallValuesWithAB(codes[0], codes[1], genoCalls);
+                }
+                else
+                {
+                    byte[] callValues = new byte[genoCalls.length];
+                    Arrays.fill(callValues, N_CALL_CODE);
+                    return callValues;
+                }
+            }
         }
         else
         {
-            aAllele = aAllele.toUpperCase();
-            bAllele = bAllele.toUpperCase();
-            genoCall = genoCall.toUpperCase();
+            return toCallValuesWithAB(aAllele, bAllele, genoCalls);
+        }
+    }
+    
+    private static byte[] toCallValuesWithAB(String aAllele, String bAllele, String[] genoCalls)
+    {
+        byte[] callValues = new byte[genoCalls.length];
+        Arrays.fill(callValues, N_CALL_CODE);
+        
+        aAllele = aAllele.toUpperCase();
+        bAllele = bAllele.toUpperCase();
+        for(int i = 0; i < genoCalls.length; i++)
+        {
+            String genoCall = genoCalls[i].toUpperCase();
             if(genoCall.equals(aAllele) ||
                genoCall.equals(Byte.toString(A_CALL_CODE)))
             {
-                return A_CALL_CODE;
+                callValues[i] = A_CALL_CODE;
             }
             else if(genoCall.equals(bAllele) ||
                     genoCall.equals(Byte.toString(B_CALL_CODE)))
             {
-                return B_CALL_CODE;
+                callValues[i] = B_CALL_CODE;
             }
             else if(genoCall.equals("H") || genoCall.equals("HH") ||
                     genoCall.equals(Byte.toString(H_CALL_CODE)))
             {
-                return H_CALL_CODE;
-            }
-            else if(genoCall.length() == 0 || genoCall.equals("N") || genoCall.equals("-") || genoCall.equals("NN") ||
-                    genoCall.equals(Byte.toString(N_CALL_CODE)))
-            {
-                return N_CALL_CODE;
-            }
-            else
-            {
-                return N_CALL_CODE;
+                callValues[i] = H_CALL_CODE;
             }
         }
+        
+        return callValues;
+    }
+    
+    private static byte[] toCallValuesWithoutAB(String[] genoCalls)
+    {
+        byte[] callValues = new byte[genoCalls.length];
+        Arrays.fill(callValues, N_CALL_CODE);
+        
+        // everything is encoded according to it's byte code
+        for(int i = 0; i < genoCalls.length; i++)
+        {
+            callValues[i] = Byte.parseByte(genoCalls[i].trim());
+        }
+        
+        return callValues;
     }
     
     /**

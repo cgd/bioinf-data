@@ -191,8 +191,7 @@ public class CsvEmmaMain
                 FlatFileReader ffr = new FlatFileReader(
                         new BufferedReader(new FileReader(genoFileName)),
                         CommonFlatFileFormat.CSV_UNIX);
-                GenotypesFlatFile genoFlatFile = new GenotypesFlatFile();
-                GenotypeCallMatrix genoMat = genoFlatFile.readGenoCallMatrix(
+                GenotypeCallMatrix genoMat = GenotypesFlatFile.readGenoCallMatrix(
                         new FlatFileReader[] {ffr},
                         Integer.parseInt(aColStr.trim()) - 1,
                         Integer.parseInt(bColStr.trim()) - 1,

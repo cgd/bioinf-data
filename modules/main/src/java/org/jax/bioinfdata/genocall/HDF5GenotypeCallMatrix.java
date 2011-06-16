@@ -101,13 +101,13 @@ public class HDF5GenotypeCallMatrix extends AbstractGenotypeCallMatrix
     @Override
     public void setAAlleles(char[] aAlleles)
     {
-        if(aAlleles == null)
-        {
-            this.hdf5Writer.delete(A_ALLELES_NAME);
-        }
-        else
+        if(aAlleles != null)
         {
             this.hdf5Writer.writeStringArray(A_ALLELES_NAME, toStrings(aAlleles));
+        }
+        else if(this.hdf5Writer.exists(A_ALLELES_NAME))
+        {
+            this.hdf5Writer.delete(A_ALLELES_NAME);
         }
     }
 
@@ -133,13 +133,13 @@ public class HDF5GenotypeCallMatrix extends AbstractGenotypeCallMatrix
     @Override
     public void setBAlleles(char[] bAlleles)
     {
-        if(bAlleles == null)
-        {
-            this.hdf5Writer.delete(B_ALLELES_NAME);
-        }
-        else
+        if(bAlleles != null)
         {
             this.hdf5Writer.writeStringArray(B_ALLELES_NAME, toStrings(bAlleles));
+        }
+        else if(this.hdf5Writer.exists(B_ALLELES_NAME))
+        {
+            this.hdf5Writer.delete(B_ALLELES_NAME);
         }
     }
 
@@ -165,13 +165,13 @@ public class HDF5GenotypeCallMatrix extends AbstractGenotypeCallMatrix
     @Override
     public void setSampleIds(String[] sampleIds)
     {
-        if(sampleIds == null)
-        {
-            this.hdf5Writer.delete(SAMPLE_IDS_NAME);
-        }
-        else
+        if(sampleIds != null)
         {
             this.hdf5Writer.writeStringArray(SAMPLE_IDS_NAME, sampleIds);
+        }
+        else if(this.hdf5Writer.exists(SAMPLE_IDS_NAME))
+        {
+            this.hdf5Writer.delete(SAMPLE_IDS_NAME);
         }
     }
 
@@ -197,13 +197,13 @@ public class HDF5GenotypeCallMatrix extends AbstractGenotypeCallMatrix
     @Override
     public void setCallMatrix(byte[][] callMatrix)
     {
-        if(callMatrix == null)
-        {
-            this.hdf5Writer.delete(CALL_MATRIX_NAME);
-        }
-        else
+        if(callMatrix != null)
         {
             this.hdf5Writer.writeByteMatrix(CALL_MATRIX_NAME, callMatrix);
+        }
+        else if(this.hdf5Writer.exists(CALL_MATRIX_NAME))
+        {
+            this.hdf5Writer.delete(CALL_MATRIX_NAME);
         }
     }
 
@@ -261,13 +261,13 @@ public class HDF5GenotypeCallMatrix extends AbstractGenotypeCallMatrix
     @Override
     public void setSnpIds(String[] snpIds)
     {
-        if(snpIds == null)
-        {
-            this.hdf5Writer.delete(SNP_IDS_NAME);
-        }
-        else
+        if(snpIds != null)
         {
             this.hdf5Writer.writeStringArray(SNP_IDS_NAME, snpIds);
+        }
+        else if(this.hdf5Writer.exists(SNP_IDS_NAME))
+        {
+            this.hdf5Writer.delete(SNP_IDS_NAME);
         }
     }
 
@@ -293,13 +293,13 @@ public class HDF5GenotypeCallMatrix extends AbstractGenotypeCallMatrix
     @Override
     public void setChrIDs(String[] chrIDs)
     {
-        if(chrIDs == null)
-        {
-            this.hdf5Writer.delete(CHR_IDS_NAME);
-        }
-        else
+        if(chrIDs != null)
         {
             this.hdf5Writer.writeStringArray(CHR_IDS_NAME, chrIDs);
+        }
+        else if(this.hdf5Writer.exists(CHR_IDS_NAME))
+        {
+            this.hdf5Writer.delete(CHR_IDS_NAME);
         }
     }
 
@@ -334,17 +334,17 @@ public class HDF5GenotypeCallMatrix extends AbstractGenotypeCallMatrix
     @Override
     public void setBpPositions(long[] bpPositions, String buildId)
     {
-        if(bpPositions == null)
-        {
-            this.hdf5Writer.delete(BP_POSITIONS_NAME);
-        }
-        else
+        if(bpPositions != null)
         {
             this.hdf5Writer.writeLongArray(BP_POSITIONS_NAME, bpPositions);
             if(buildId != null)
             {
                 this.hdf5Writer.setStringAttribute(BP_POSITIONS_NAME, BUILD_ID_NAME, buildId);
             }
+        }
+        else if(this.hdf5Writer.exists(BP_POSITIONS_NAME))
+        {
+            this.hdf5Writer.delete(BP_POSITIONS_NAME);
         }
     }
 

@@ -15,11 +15,12 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jax.bioinfdata.genocall;
+package org.jax.bioinfdata.phylogeny;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -28,9 +29,9 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.jax.bioinfdata.genocall.HDF5GenotypeCallMatrix;
 import org.jax.util.io.CommonFlatFileFormat;
 import org.jax.util.io.FlatFileWriter;
-import org.jax.util.io.IllegalFormatException;
 
 import ch.systemsx.cisd.hdf5.HDF5FactoryProvider;
 import ch.systemsx.cisd.hdf5.IHDF5Factory;
@@ -39,15 +40,14 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 /**
  * @author <A HREF="mailto:keith.sheppard@jax.org">Keith Sheppard</A>
  */
-public class ConvertGenotypeHDF5ToFlatFileMain
+public class CalculateIntervalsMain
 {
     /**
-     * the main entry point
-     * @param args  command line args
-     * @throws IOException
-     * @throws IllegalFormatException
+     * The main entry point
+     * @param args function arguments
+     * @throws IOException if we have a problem reading/writing data
      */
-    public static void main(String[] args) throws IllegalFormatException, IOException
+    public static void main(String[] args) throws IOException
     {
         // Deal with the options.
         CommandLineParser parser = new GnuParser();
@@ -61,31 +61,11 @@ public class ConvertGenotypeHDF5ToFlatFileMain
             options.addOption(helpOption);
         }
         
-        final Option genoFileOption;
-        {
-            genoFileOption = new Option("genooutfile", "the genotype output flat file");
-            genoFileOption.setRequired(true);
-            genoFileOption.setArgs(1);
-            genoFileOption.setArgName("file name");
-            options.addOption(genoFileOption);
-        }
-        
-        final Option genoOutFormatOption;
-        {
-            genoOutFormatOption = new Option(
-                    "genooutformat",
-                    "[optional] the format of the genotype file (must be \"csv\" or \"tab\")");
-            genoOutFormatOption.setRequired(false);
-            genoOutFormatOption.setArgs(1);
-            genoOutFormatOption.setArgName("csv or tab");
-            options.addOption(genoOutFormatOption);
-        }
-        
         final Option hdf5InputFileOption;
         {
             hdf5InputFileOption = new Option(
                     "hdf5in",
-                    "the file to read HDF5 input from");
+                    "the HDF5 input file containing the genotype matrix");
             hdf5InputFileOption.setRequired(true);
             hdf5InputFileOption.setArgs(1);
             hdf5InputFileOption.setArgName("file name");
@@ -100,45 +80,38 @@ public class ConvertGenotypeHDF5ToFlatFileMain
             if(commandLine.hasOption(helpOption.getOpt()))
             {
                 HelpFormatter helpFormatter = new HelpFormatter();
-                helpFormatter.printHelp("hdf5toff", options);
+                helpFormatter.printHelp("calcintervals", options);
             }
             else
             {
-                final String genoFileName = commandLine.getOptionValue(genoFileOption.getOpt());
-                final String genoOutFmtStr = commandLine.getOptionValue(genoOutFormatOption.getOpt());
                 final String hdf5InFileName = commandLine.getOptionValue(hdf5InputFileOption.getOpt());
                 
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
                 IHDF5Reader hdf5Reader = hdf5Fac.openForReading(new File(hdf5InFileName));
                 HDF5GenotypeCallMatrix hdf5GenoMatrix = new HDF5GenotypeCallMatrix(hdf5Reader);
                 
-                final FlatFileWriter genoFFW;
-                if(genoOutFmtStr == null || genoOutFmtStr.trim().toLowerCase().equals("csv"))
+                IntervalScanner is = new IntervalScanner();
+                List<IndexedSnpInterval> scanResult = is.maxKScan(hdf5GenoMatrix);
+                FlatFileWriter ffw = new FlatFileWriter(
+                        new OutputStreamWriter(System.out),
+                        CommonFlatFileFormat.CSV_UNIX);
+                String[] chrIDArray = hdf5GenoMatrix.getChrIDs();
+                long[] posArray = hdf5GenoMatrix.getBpPositions();
+                ffw.writeRow(new String[] {"start", "extent"});
+                for(IndexedSnpInterval isi : scanResult)
                 {
-                    genoFFW = new FlatFileWriter(
-                            new FileWriter(genoFileName),
-                            CommonFlatFileFormat.CSV_UNIX);
+                    ffw.writeRow(new String[] {
+                            chrIDArray[isi.getStartIndex()],
+                            Long.toString(posArray[isi.getStartIndex()]),
+                            Long.toString(posArray[isi.getEndIndex()])});
                 }
-                else if(genoOutFmtStr.trim().toLowerCase().equals("tab"))
-                {
-                    genoFFW = new FlatFileWriter(
-                            new FileWriter(genoFileName),
-                            CommonFlatFileFormat.TAB_DELIMITED_UNIX);
-                }
-                else
-                {
-                    throw new ParseException("geno file input format must be \"tab\" or \"csv\"");
-                }
-                
-                GenotypesFlatFile.writeGenoCallMatrix(hdf5GenoMatrix, genoFFW);
-                hdf5Reader.close();
-                genoFFW.close();
+                ffw.flush();
             }
         }
         catch(ParseException ex)
         {
             HelpFormatter helpFormatter = new HelpFormatter();
-            helpFormatter.printHelp("hdf5toff", options);
+            helpFormatter.printHelp("calcintervals", options);
             
             System.exit(-1);
         }

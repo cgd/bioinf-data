@@ -246,8 +246,7 @@ public class ConvertGenotypeFlatFileToHDF5Main
                             ffFormat);
                 }
                 
-                GenotypesFlatFile gff = new GenotypesFlatFile();
-                GenotypeCallMatrix genoMat = gff.readGenoCallMatrix(
+                GenotypeCallMatrix genoMat = GenotypesFlatFile.readGenoCallMatrix(
                         genoFFRs,
                         argToIntMinus1(aColStr),
                         argToIntMinus1(bColStr),

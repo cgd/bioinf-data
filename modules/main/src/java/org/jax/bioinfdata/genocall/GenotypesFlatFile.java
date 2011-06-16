@@ -28,10 +28,17 @@ import org.jax.util.io.FlatFileWriter;
 import org.jax.util.io.IllegalFormatException;
 
 /**
+ * Class of static functions for reading/writing genotype matrices stored
+ * in flast files
  * @author <A HREF="mailto:keith.sheppard@jax.org">Keith Sheppard</A>
  */
 public class GenotypesFlatFile
 {
+    /**
+     * Private constructor. This class should not be instantiated.
+     */
+    private GenotypesFlatFile() {}
+    
     /**
      * Convert from a genotype HDF5 file to a flat file
      * @param genoCalls
@@ -41,7 +48,7 @@ public class GenotypesFlatFile
      * @throws IOException
      *          if anything goes wrong while writing
      */
-    public void writeGenoCallMatrix(
+    public static void writeGenoCallMatrix(
             AbstractGenotypeCallMatrix genoCalls,
             FlatFileWriter flatFileWriter) throws IOException
     {
@@ -152,7 +159,7 @@ public class GenotypesFlatFile
         }
     }
     
-    private char[] toChars(List<String> callChars)
+    private static char[] toChars(List<String> callChars)
     {
         char[] val = new char[callChars.size()];
         int i = 0;
@@ -193,7 +200,7 @@ public class GenotypesFlatFile
      * @throws IOException
      *          if there is a problem with file IO while reading the flat file
      */
-    public GenotypeCallMatrix readGenoCallMatrix(
+    public static GenotypeCallMatrix readGenoCallMatrix(
             FlatFileReader[] flatFileReaders,
             int aAlleleColumn,
             int bAlleleColumn,
@@ -274,15 +281,14 @@ public class GenotypesFlatFile
                     bpPos.add(Long.parseLong(currRow[bpPositionColumn]));
                 }
                 
-                byte[] currSnpGenos = new byte[strainCount];
-                for(int strainIndex = 0; strainIndex < strainCount; strainIndex++)
-                {
-                    currSnpGenos[strainIndex] = GenotypeCallMatrix.toCallValue(
-                            aAllele,
-                            bAllele,
-                            currRow[strainIndex + firstGenotypeColumn]);
-                }
-                callValues.add(currSnpGenos);
+                String[] callStrings = Arrays.copyOfRange(
+                        currRow,
+                        firstGenotypeColumn,
+                        firstGenotypeColumn + strainCount);
+                callValues.add(GenotypeCallMatrix.toCallValues(
+                        aAllele,
+                        bAllele,
+                        callStrings));
             }
         }
         
@@ -312,7 +318,7 @@ public class GenotypesFlatFile
      * @throws IOException
      *          if there is a problem with file IO while reading the flat file
      */
-    public GenotypeCallMatrix readAlchemyGenoCalls(FlatFileReader flatFileReader)
+    public static GenotypeCallMatrix readAlchemyGenoCalls(FlatFileReader flatFileReader)
     throws IllegalFormatException, IOException
     {
         final int snpIDCol = 0;
@@ -360,7 +366,7 @@ public class GenotypesFlatFile
                 prevSNPId = currSnpID;
             }
             
-            currCallRow.add(this.alchemyCallToByteCall(currABCall));
+            currCallRow.add(alchemyCallToByteCall(currABCall));
             if(snpIndex == 0)
             {
                 sampleIDs.add(currSampleID);
@@ -383,7 +389,7 @@ public class GenotypesFlatFile
         return callMat;
     }
 
-    private byte alchemyCallToByteCall(String abCall)
+    private static byte alchemyCallToByteCall(String abCall)
     {
         if(abCall.equals("AA"))
         {

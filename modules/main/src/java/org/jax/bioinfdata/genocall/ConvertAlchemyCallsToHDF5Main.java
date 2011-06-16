@@ -100,8 +100,7 @@ public class ConvertAlchemyCallsToHDF5Main
                         new FileReader(genoFileName),
                         CommonFlatFileFormat.TAB_DELIMITED_UNIX);
                 
-                GenotypesFlatFile gff = new GenotypesFlatFile();
-                GenotypeCallMatrix genoMat = gff.readAlchemyGenoCalls(genoFFR);
+                GenotypeCallMatrix genoMat = GenotypesFlatFile.readAlchemyGenoCalls(genoFFR);
                 genoFFR.close();
                 
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
