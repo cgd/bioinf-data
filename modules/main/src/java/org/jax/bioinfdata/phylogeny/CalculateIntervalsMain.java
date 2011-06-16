@@ -46,8 +46,9 @@ public class CalculateIntervalsMain
      * The main entry point
      * @param args function arguments
      * @throws IOException if we have a problem reading/writing data
+     * @throws NoValidPhylogenyException
      */
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args) throws IOException, NoValidPhylogenyException
     {
         // Deal with the options.
         CommandLineParser parser = new GnuParser();
@@ -90,20 +91,27 @@ public class CalculateIntervalsMain
                 IHDF5Reader hdf5Reader = hdf5Fac.openForReading(new File(hdf5InFileName));
                 HDF5GenotypeCallMatrix hdf5GenoMatrix = new HDF5GenotypeCallMatrix(hdf5Reader);
                 
-                IntervalScanner is = new IntervalScanner();
-                List<IndexedSnpInterval> scanResult = is.maxKScan(hdf5GenoMatrix);
+                List<IndexedSnpInterval> maxKScanResult = IntervalScanner.maxKScan(hdf5GenoMatrix);
+                List<PhylogenyTreeNode> phyloScanResult = PhylogenyScanner.inferPerfectPhylogenies(
+                        hdf5GenoMatrix,
+                        maxKScanResult);
+                assert maxKScanResult.size() == phyloScanResult.size();
+                
                 FlatFileWriter ffw = new FlatFileWriter(
                         new OutputStreamWriter(System.out),
                         CommonFlatFileFormat.CSV_UNIX);
                 String[] chrIDArray = hdf5GenoMatrix.getChrIDs();
                 long[] posArray = hdf5GenoMatrix.getBpPositions();
-                ffw.writeRow(new String[] {"start", "extent"});
-                for(IndexedSnpInterval isi : scanResult)
+                ffw.writeRow(new String[] {"chr", "start", "extent", "phylo"});
+                for(int i = 0; i < maxKScanResult.size(); i++)
                 {
+                    IndexedSnpInterval isi = maxKScanResult.get(i);
+                    PhylogenyTreeNode phylo = phyloScanResult.get(i);
                     ffw.writeRow(new String[] {
                             chrIDArray[isi.getStartIndex()],
                             Long.toString(posArray[isi.getStartIndex()]),
-                            Long.toString(posArray[isi.getEndIndex()])});
+                            Long.toString(posArray[isi.getEndIndex()]),
+                            phylo.toNewickFormat()});
                 }
                 ffw.flush();
             }

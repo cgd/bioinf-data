@@ -78,21 +78,27 @@ public class IntervalScanner
     }
     
     /**
+     * Private constructor. This class should not be instantiated since all
+     * functions and members are static.
+     */
+    private IntervalScanner() {}
+    
+    /**
      * Do a max-k scan which involves doing a lot of other scans.
      * @param callMatrix
      *          the calls to scan
      * @return
      *          the max-k interval
      */
-    public List<IndexedSnpInterval> maxKScan(AbstractGenotypeCallMatrix callMatrix)
+    public static List<IndexedSnpInterval> maxKScan(AbstractGenotypeCallMatrix callMatrix)
     {
-        List<IndexedSnpInterval> forwardIntervals = this.greedyScan(callMatrix);
-        List<IndexedSnpInterval> reverseIntervals = this.greedyScan(new ReverseGenotypeCallMatrix(callMatrix));
-        this.reverseIndexedIntervals(reverseIntervals, (int)callMatrix.getSNPCount());
-        List<IndexedSnpInterval> uberIntervals = this.uberScan(callMatrix);
-        List<IndexedSnpInterval> coreIntervals = this.createCoreIntervals(forwardIntervals, reverseIntervals);
-        List<List<IndexedSnpInterval>> uberCores = this.createUberCores(uberIntervals, coreIntervals);
-        List<IndexedSnpInterval> maxKIntervals = this.createMaxKIntervals(uberCores);
+        List<IndexedSnpInterval> forwardIntervals = greedyScan(callMatrix);
+        List<IndexedSnpInterval> reverseIntervals = greedyScan(new ReverseGenotypeCallMatrix(callMatrix));
+        reverseIndexedIntervals(reverseIntervals, (int)callMatrix.getSNPCount());
+        List<IndexedSnpInterval> uberIntervals = uberScan(callMatrix);
+        List<IndexedSnpInterval> coreIntervals = createCoreIntervals(forwardIntervals, reverseIntervals);
+        List<List<IndexedSnpInterval>> uberCores = createUberCores(uberIntervals, coreIntervals);
+        List<IndexedSnpInterval> maxKIntervals = createMaxKIntervals(uberCores);
         
         return maxKIntervals;
     }
@@ -104,7 +110,7 @@ public class IntervalScanner
      * @return
      *          the uber list of compatible intervals
      */
-    public List<IndexedSnpInterval> uberScan(AbstractGenotypeCallMatrix callMatrix)
+    public static List<IndexedSnpInterval> uberScan(AbstractGenotypeCallMatrix callMatrix)
     {
         ArrayList<IndexedSnpInterval> intervals = new ArrayList<IndexedSnpInterval>();
         
@@ -114,7 +120,7 @@ public class IntervalScanner
         int nearestIncompatibleIndex = -1;
         while(startIndex < sdpCount)
         {
-            nearestIncompatibleIndex = this.testCompatibleAndUberAdd(
+            nearestIncompatibleIndex = testCompatibleAndUberAdd(
                     intervalSdps,
                     callMatrix.getSNPCalls(startIndex),
                     startIndex);
@@ -122,7 +128,7 @@ public class IntervalScanner
             int nextIndex = startIndex + 1;
             while(nextIndex < sdpCount)
             {
-                nearestIncompatibleIndex = this.testCompatibleAndUberAdd(
+                nearestIncompatibleIndex = testCompatibleAndUberAdd(
                         intervalSdps,
                         callMatrix.getSNPCalls(nextIndex),
                         nextIndex);
@@ -164,7 +170,7 @@ public class IntervalScanner
      * @return
      *          the cores
      */
-    public List<IndexedSnpInterval> createCoreIntervals(
+    public static List<IndexedSnpInterval> createCoreIntervals(
             List<IndexedSnpInterval> forwardGreedyIntervals,
             List<IndexedSnpInterval> reverseGreedyIntervals)
     {
@@ -211,7 +217,7 @@ public class IntervalScanner
      *          following some rules that we know apply to the max-k set
      *          of intervals
      */
-    public List<List<IndexedSnpInterval>> createUberCores(
+    public static List<List<IndexedSnpInterval>> createUberCores(
             List<IndexedSnpInterval> uberIntervals,
             List<IndexedSnpInterval> coreIntervals)
     {
@@ -322,7 +328,7 @@ public class IntervalScanner
      *          -1 if the given SDP is compatible with current interval SDPs
      *          or the index of the nearest incompatibility if we find one
      */
-    private int testCompatibleAndUberAdd(
+    private static int testCompatibleAndUberAdd(
             ExposedArrayList<SdpIndexPair> intervalSdps,
             byte[] sdpToAdd,
             int sdpIndex)
@@ -372,7 +378,7 @@ public class IntervalScanner
      *          the list of SNP intervals. these intervals will cover the
      *          entire genome with no overlap
      */
-    public List<IndexedSnpInterval> greedyScan(AbstractGenotypeCallMatrix callMatrix)
+    public static List<IndexedSnpInterval> greedyScan(AbstractGenotypeCallMatrix callMatrix)
     {
         ArrayList<IndexedSnpInterval> intervals = new ArrayList<IndexedSnpInterval>();
         
@@ -384,7 +390,7 @@ public class IntervalScanner
             intervalSdps.add(callMatrix.getSNPCalls(startIndex));
             int incompatIndex = startIndex + 1;
             while(incompatIndex < sdpCount &&
-                  this.checkCompatibilityAndAddSdp(intervalSdps, callMatrix.getSNPCalls(incompatIndex)))
+                  checkCompatibilityAndAddSdp(intervalSdps, callMatrix.getSNPCalls(incompatIndex)))
             {
                 incompatIndex++;
             }
@@ -406,7 +412,7 @@ public class IntervalScanner
      * @param sdpToAdd      the SDP we'll try to add to the interval
      * @return  true if the SDP is fully compatible, false otherwise
      */
-    private boolean checkCompatibilityAndAddSdp(
+    private static boolean checkCompatibilityAndAddSdp(
             List<byte[]> intervalSdps,
             byte[] sdpToAdd)
     {
@@ -525,25 +531,10 @@ public class IntervalScanner
             }
         }
         
-//        // some test code
-//        BitSet sdp1Bits = new BitSet(len);
-//        BitSet sdp2Bits = new BitSet(len);
-//        for(int i = 0; i < len; i++)
-//        {
-//            if(sdp1[i] == AbstractGenotypeCallMatrix.A_CALL_CODE)
-//                sdp1Bits.set(i);
-//            if(sdp2[i] == AbstractGenotypeCallMatrix.A_CALL_CODE)
-//                sdp2Bits.set(i);
-//        }
-//        
-//        if(sdp1Bits.cardinality() > (len / 2))
-//            sdp1Bits.flip(0, len);
-//        if(sdp2Bits.cardinality() > (len / 2))
-//            sdp2Bits.flip(0, len);
-//        
-//        assert areMinorityNormalizedSdpsCompatible(sdp1Bits, sdp2Bits) == !(observedAA && observedAB && observedBA && observedBB);
-        
         boolean observedFourGametes = observedAA && observedAB && observedBA && observedBB;
+        assert !observedFourGametes == areMinorityNormalizedSdpsCompatible(
+                        AbstractGenotypeCallMatrix.toBitSet(sdp1, true),
+                        AbstractGenotypeCallMatrix.toBitSet(sdp2, true));
         return !observedFourGametes;
     }
     
@@ -557,7 +548,7 @@ public class IntervalScanner
      *          the total snp count (range) that we're flipping the intervals
      *          over
      */
-    protected void reverseIndexedIntervals(
+    private static void reverseIndexedIntervals(
             List<IndexedSnpInterval> intervalsToReverse,
             int totalSnpCount)
     {
@@ -573,10 +564,10 @@ public class IntervalScanner
             
             intervalsToReverse.set(
                     index1,
-                    this.reverseIndexedInterval(interval2, totalSnpCount));
+                    reverseIndexedInterval(interval2, totalSnpCount));
             intervalsToReverse.set(
                     index2,
-                    this.reverseIndexedInterval(interval1, totalSnpCount));
+                    reverseIndexedInterval(interval1, totalSnpCount));
         }
         
         // if we have an odd count we still need to reverse the middle interval
@@ -587,7 +578,7 @@ public class IntervalScanner
                 intervalsToReverse.get(middleIndex);
             intervalsToReverse.set(
                     middleIndex,
-                    this.reverseIndexedInterval(middleInterval, totalSnpCount));
+                    reverseIndexedInterval(middleInterval, totalSnpCount));
         }
     }
     
@@ -602,7 +593,7 @@ public class IntervalScanner
      *          the interval which will be reveresed (or "flipped") along the
      *          range indicated by the total count
      */
-    protected IndexedSnpInterval reverseIndexedInterval(
+    private static IndexedSnpInterval reverseIndexedInterval(
             IndexedSnpInterval intervalToReverse,
             int totalSnpCount)
     {
@@ -621,7 +612,7 @@ public class IntervalScanner
      * @return
      *          the max-k interval list
      */
-    public List<IndexedSnpInterval> createMaxKIntervals(List<List<IndexedSnpInterval>> uberCores)
+    public static List<IndexedSnpInterval> createMaxKIntervals(List<List<IndexedSnpInterval>> uberCores)
     {
         int coreCount = uberCores.size();
         List<IndexedSnpInterval> maxKIntervals = new ArrayList<IndexedSnpInterval>(

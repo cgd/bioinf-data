@@ -18,6 +18,7 @@
 package org.jax.bioinfdata.genocall;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -160,6 +161,55 @@ public abstract class AbstractGenotypeCallMatrix
         toMat.setSnpIds(fromMat.getSnpIds());
         toMat.setChrIDs(fromMat.getChrIDs());
         toMat.setBpPositions(fromMat.getBpPositions(), fromMat.getBuildId());
+    }
+    
+    /**
+     * Convert the following calls into a BitSet. This function expects all
+     * snpCalls to be A or B and will throw an exception otherwise
+     * @param snpCalls
+     *          the SNP calls to convert
+     * @param minNorm
+     *          should the calls be "minority normalized". If true then the
+     *          minority allele will be 1 or in the case where both alleles
+     *          occur with the same frequency the allele that occurs in the
+     *          first position will be 1. If false the A allele will be 1 and
+     *          the B allele will be 0
+     * @return
+     *          the bit set
+     * @throws IllegalArgumentException
+     *          in the case where the snpCalls are not all A or B
+     */
+    public static BitSet toBitSet(byte[] snpCalls, boolean minNorm) throws IllegalArgumentException
+    {
+        BitSet snpBits = new BitSet(snpCalls.length);
+        for(int i = 0; i < snpCalls.length; i++)
+        {
+            if(snpCalls[i] == AbstractGenotypeCallMatrix.A_CALL_CODE)
+            {
+                snpBits.set(i);
+            }
+            else if(snpCalls[i] != B_CALL_CODE)
+            {
+                throw new IllegalArgumentException(
+                        "the toBitSet function is only valid for SNPs where " +
+                        "all calls are A or B");
+            }
+        }
+        
+        if(minNorm)
+        {
+            // if there are more 1's than 0's OR if the 1's count is equal to
+            // the 0's count AND the 1st bit is on, then we need to flip all
+            // of the bits to normalize
+            int doubleOnesCount = snpBits.cardinality() * 2;
+            if(doubleOnesCount > snpCalls.length ||
+               (doubleOnesCount == snpCalls.length && snpBits.get(0)))
+            {
+                snpBits.flip(0, snpCalls.length);
+            }
+        }
+        
+        return snpBits;
     }
 
     /**
