@@ -65,9 +65,23 @@ public class PhylogenyScanner
             for(int i = startIndex; i <= endIndex; i++)
             {
                 byte[] snpBytes = genoCalls.getSNPCalls(i);
-                // TODO this will throw an exception in the case of H or N calls
-                BitSet snpBits = AbstractGenotypeCallMatrix.toBitSet(snpBytes, true);
-                insertSdpInHierarchies(inclusionHierarchies, snpBits);
+                
+                // TODO add support for N's and H's at some point
+                boolean allHomo = true;
+                for(byte b: snpBytes)
+                {
+                    if(b != AbstractGenotypeCallMatrix.A_CALL_CODE &&
+                       b != AbstractGenotypeCallMatrix.B_CALL_CODE)
+                    {
+                        allHomo = false;
+                    }
+                }
+                
+                if(allHomo)
+                {
+                    BitSet snpBits = AbstractGenotypeCallMatrix.toBitSet(snpBytes, true);
+                    insertSdpInHierarchies(inclusionHierarchies, snpBits);
+                }
             }
             
             BitSet allBits = new BitSet(sdpStrainNames.length);
@@ -79,7 +93,7 @@ public class PhylogenyScanner
                     inclusionHierarchy,
                     sdpStrainNames);
             
-            assert !phylogeny.getChildEdges().isEmpty();
+            //assert !phylogeny.getChildEdges().isEmpty();
             phylogenies.add(phylogeny);
         }
         
