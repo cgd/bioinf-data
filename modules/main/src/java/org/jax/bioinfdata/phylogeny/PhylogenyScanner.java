@@ -74,6 +74,7 @@ public class PhylogenyScanner
                        b != AbstractGenotypeCallMatrix.B_CALL_CODE)
                     {
                         allHomo = false;
+                        break;
                     }
                 }
                 
