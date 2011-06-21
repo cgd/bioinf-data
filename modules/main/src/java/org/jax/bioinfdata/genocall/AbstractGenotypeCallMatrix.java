@@ -37,6 +37,7 @@ public abstract class AbstractGenotypeCallMatrix
     public static final String CHR_IDS_NAME = "chrID";
     public static final String BP_POSITIONS_NAME = "bpPosition";
     public static final String BUILD_ID_NAME = "buildID";
+    public static final String SORTED_BY_POS_NAME = "sortedByPosition";
     
     public static final byte A_CALL_CODE = 1;
     public static final byte B_CALL_CODE = 2;
@@ -160,7 +161,9 @@ public abstract class AbstractGenotypeCallMatrix
         toMat.setCallMatrix(fromMat.getCallMatrix());
         toMat.setSnpIds(fromMat.getSnpIds());
         toMat.setChrIDs(fromMat.getChrIDs());
-        toMat.setBpPositions(fromMat.getBpPositions(), fromMat.getBuildId());
+        toMat.setBpPositions(fromMat.getBpPositions());
+        toMat.setBuildId(fromMat.getBuildId());
+        toMat.setSortedByPosition(fromMat.getSortedByPosition());
     }
     
     /**
@@ -309,21 +312,32 @@ public abstract class AbstractGenotypeCallMatrix
     public abstract long[] getBpPositions();
     
     /**
-     * Getter for the build ID (eg "build 37")
-     * @return  the build ID
-     */
-    public abstract String getBuildId();
-    
-    /**
      * setter for the BP positions
      * @param bpPositions   the bp positions
      */
     public abstract void setBpPositions(long[] bpPositions);
     
     /**
-     * setter for the BP positions
-     * @param bpPositions   the bp positions
-     * @param buildId       the build ID
+     * Getter for the build ID (eg "build 37")
+     * @return  the build ID
      */
-    public abstract void setBpPositions(long[] bpPositions, String buildId);
+    public abstract String getBuildId();
+    
+    /**
+     * Setter for the build ID
+     * @param buildId   the build ID
+     */
+    public abstract void setBuildId(String buildId);
+    
+    /**
+     * Determines if this is sorted by position
+     * @return  true iff this is sorted by position
+     */
+    public abstract boolean getSortedByPosition();
+    
+    /**
+     * Setter indicating if the entries are sorted by position or not
+     * @param sortedByPosition  indicates if this is sorted or not
+     */
+    public abstract void setSortedByPosition(boolean sortedByPosition);
 }

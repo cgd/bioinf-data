@@ -234,28 +234,46 @@ public class ReverseGenotypeCallMatrix extends AbstractGenotypeCallMatrix
      * {@inheritDoc}
      */
     @Override
-    public String getBuildId()
-    {
-        return this.originalCallMatrix.getBuildId();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public void setBpPositions(long[] bpPositions)
     {
         this.originalCallMatrix.setBpPositions(reverseLongArray(bpPositions));
     }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getBuildId()
+    {
+        return this.originalCallMatrix.getBuildId();
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setBuildId(String buildId)
+    {
+        this.originalCallMatrix.setBuildId(buildId);
+    }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setBpPositions(long[] bpPositions, String buildId)
+    public boolean getSortedByPosition()
     {
-        this.originalCallMatrix.setBpPositions(
-                reverseLongArray(bpPositions),
-                buildId);
+        return this.originalCallMatrix.getSortedByPosition();
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setSortedByPosition(boolean sortedByPosition)
+    {
+        // TODO don't know if this is really the right thing to do for
+        //      a reversed matrix
+        this.originalCallMatrix.setSortedByPosition(sortedByPosition);
     }
 }

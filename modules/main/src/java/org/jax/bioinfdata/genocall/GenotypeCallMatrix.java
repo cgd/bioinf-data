@@ -32,6 +32,7 @@ public class GenotypeCallMatrix extends AbstractGenotypeCallMatrix
     private String[] chrIDs;
     private long[] bpPositions;
     private String buildId;
+    private boolean sortedByPosition;
     
     /**
      * {@inheritDoc}
@@ -172,9 +173,17 @@ public class GenotypeCallMatrix extends AbstractGenotypeCallMatrix
      * {@inheritDoc}
      */
     @Override
-    public void setBpPositions(long[] bpPositions, String buildId)
+    public String getBuildId()
     {
-        this.bpPositions = bpPositions;
+        return this.buildId;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setBuildId(String buildId)
+    {
         this.buildId = buildId;
     }
     
@@ -182,9 +191,18 @@ public class GenotypeCallMatrix extends AbstractGenotypeCallMatrix
      * {@inheritDoc}
      */
     @Override
-    public String getBuildId()
+    public void setSortedByPosition(boolean sortedByPosition)
     {
-        return this.buildId;
+        this.sortedByPosition = sortedByPosition;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean getSortedByPosition()
+    {
+        return this.sortedByPosition;
     }
     
     /**

@@ -41,6 +41,25 @@ public class HDF5GenotypeCallMatrix extends AbstractGenotypeCallMatrix
         this.hdf5Writer = hdf5Writer;
     }
     
+//    private static String pathCombine(String... pathElements)
+//    {
+//        StringBuilder sb = new StringBuilder();
+//        for(int i = 0; i < pathElements.length; i++)
+//        {
+//            if(i >= 1)
+//            {
+//                if(!(pathElements[i - 1].endsWith("/") || pathElements[i].startsWith("/")))
+//                {
+//                    sb.append('/');
+//                }
+//            }
+//            
+//            sb.append(pathElements[i]);
+//        }
+//        
+//        return sb.toString();
+//    }
+    
     /**
      * Constructor
      * @param hdf5Reader the reader
@@ -318,50 +337,77 @@ public class HDF5GenotypeCallMatrix extends AbstractGenotypeCallMatrix
             return null;
         }
     }
-
+    
     /**
      * {@inheritDoc}
      */
     @Override
     public void setBpPositions(long[] bpPositions)
     {
-        this.setBpPositions(bpPositions, null);
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setBpPositions(long[] bpPositions, String buildId)
-    {
         if(bpPositions != null)
         {
             this.hdf5Writer.writeLongArray(BP_POSITIONS_NAME, bpPositions);
-            if(buildId != null)
-            {
-                this.hdf5Writer.setStringAttribute(BP_POSITIONS_NAME, BUILD_ID_NAME, buildId);
-            }
         }
         else if(this.hdf5Writer.exists(BP_POSITIONS_NAME))
         {
             this.hdf5Writer.delete(BP_POSITIONS_NAME);
         }
     }
-
+    
     /**
      * {@inheritDoc}
      */
     @Override
     public String getBuildId()
     {
-        if(this.hdf5Reader.exists(BP_POSITIONS_NAME))
+        if(this.hdf5Reader.exists(BUILD_ID_NAME))
         {
-            if(this.hdf5Reader.hasAttribute(BP_POSITIONS_NAME, BUILD_ID_NAME))
-            {
-                return this.hdf5Reader.getStringAttribute(BP_POSITIONS_NAME, BUILD_ID_NAME);
-            }
+            return this.hdf5Reader.readString(BUILD_ID_NAME);
         }
-        
-        return null;
+        else
+        {
+            return null;
+        }
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setBuildId(String buildId)
+    {
+        if(buildId != null)
+        {
+            this.hdf5Writer.writeString(BUILD_ID_NAME, buildId);
+        }
+        else if(this.hdf5Writer.exists(BUILD_ID_NAME))
+        {
+            this.hdf5Writer.delete(BUILD_ID_NAME);
+        }
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean getSortedByPosition()
+    {
+        if(this.hdf5Reader.exists(SORTED_BY_POS_NAME))
+        {
+            return this.hdf5Reader.readBoolean(SORTED_BY_POS_NAME);
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setSortedByPosition(boolean sortedByPosition)
+    {
+        this.hdf5Writer.writeBoolean(SORTED_BY_POS_NAME, sortedByPosition);
     }
 }
