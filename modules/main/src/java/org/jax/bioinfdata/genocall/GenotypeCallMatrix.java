@@ -200,7 +200,7 @@ public class GenotypeCallMatrix extends AbstractGenotypeCallMatrix
      * {@inheritDoc}
      */
     @Override
-    public boolean getSortedByPosition()
+    public boolean isSortedByPosition()
     {
         return this.sortedByPosition;
     }

@@ -17,6 +17,7 @@
 
 package org.jax.bioinfdata.genocall;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
@@ -163,7 +164,7 @@ public abstract class AbstractGenotypeCallMatrix
         toMat.setChrIDs(fromMat.getChrIDs());
         toMat.setBpPositions(fromMat.getBpPositions());
         toMat.setBuildId(fromMat.getBuildId());
-        toMat.setSortedByPosition(fromMat.getSortedByPosition());
+        toMat.setSortedByPosition(fromMat.isSortedByPosition());
     }
     
     /**
@@ -333,11 +334,199 @@ public abstract class AbstractGenotypeCallMatrix
      * Determines if this is sorted by position
      * @return  true iff this is sorted by position
      */
-    public abstract boolean getSortedByPosition();
+    public abstract boolean isSortedByPosition();
     
     /**
      * Setter indicating if the entries are sorted by position or not
      * @param sortedByPosition  indicates if this is sorted or not
      */
     public abstract void setSortedByPosition(boolean sortedByPosition);
+    
+    /**
+     * Uses {@link #getSnpSubsetView(int, int)} to extract views for all of
+     * the regions where there is a contiguous chromosome value
+     * @return  the contiguous chromosome views
+     * @throws NullPointerException if {@link #getChrIDs()} returns null
+     */
+    public List<AbstractGenotypeCallMatrix> getChromosomeViews()
+    {
+        List<AbstractGenotypeCallMatrix> chrViews =
+            new ArrayList<AbstractGenotypeCallMatrix>();
+        
+        String[] chrIds = this.getChrIDs();
+        if(chrIds.length >= 1)
+        {
+            int currStart = 0;
+            String currContigChr = chrIds[0];
+            for(int i = 1; i < chrIds.length; i++)
+            {
+                if(!currContigChr.equals(chrIds[i]))
+                {
+                    chrViews.add(this.getSnpSubsetView(currStart, i - currStart));
+                    currStart = i;
+                    currContigChr = chrIds[i];
+                }
+            }
+            
+            if(chrViews.size() == 0)
+            {
+                chrViews.add(this);
+            }
+            else
+            {
+                chrViews.add(this.getSnpSubsetView(currStart, chrIds.length - currStart));
+            }
+        }
+        
+        return chrViews;
+    }
+    
+    /**
+     * Get a read-only subset view of this call matrix
+     * @param startSnpIndex the starting index
+     * @param extent        the extent
+     * @return              the subset view
+     */
+    public AbstractGenotypeCallMatrix getSnpSubsetView(
+            final int startSnpIndex,
+            final int extent)
+    {
+        return new AbstractGenotypeCallMatrix()
+        {
+            @Override
+            public void setSortedByPosition(boolean sortedByPosition)
+            {
+                throw new UnsupportedOperationException(
+                        "This function is not supported in a subset view");
+            }
+            
+            @Override
+            public void setSnpIds(String[] snpIds)
+            {
+                throw new UnsupportedOperationException(
+                        "This function is not supported in a subset view");
+            }
+            
+            @Override
+            public void setSampleIds(String[] sampleIds)
+            {
+                throw new UnsupportedOperationException(
+                        "This function is not supported in a subset view");
+            }
+            
+            @Override
+            public void setChrIDs(String[] chrIDs)
+            {
+                throw new UnsupportedOperationException(
+                        "This function is not supported in a subset view");
+            }
+            
+            @Override
+            public void setCallMatrix(byte[][] callMatrix)
+            {
+                throw new UnsupportedOperationException(
+                        "This function is not supported in a subset view");
+            }
+            
+            @Override
+            public void setBuildId(String buildId)
+            {
+                throw new UnsupportedOperationException(
+                        "This function is not supported in a subset view");
+            }
+            
+            @Override
+            public void setBpPositions(long[] bpPositions)
+            {
+                throw new UnsupportedOperationException(
+                        "This function is not supported in a subset view");
+            }
+            
+            @Override
+            public void setBAlleles(char[] bAlleles)
+            {
+                throw new UnsupportedOperationException(
+                        "This function is not supported in a subset view");
+            }
+            
+            @Override
+            public void setAAlleles(char[] aAlleles)
+            {
+                throw new UnsupportedOperationException(
+                        "This function is not supported in a subset view");
+            }
+            
+            @Override
+            public boolean isSortedByPosition()
+            {
+                return AbstractGenotypeCallMatrix.this.isSortedByPosition();
+            }
+            
+            @Override
+            public String[] getSnpIds()
+            {
+                String[] snpIds = AbstractGenotypeCallMatrix.this.getSnpIds();
+                return Arrays.copyOfRange(snpIds, startSnpIndex, startSnpIndex + extent);
+            }
+            
+            @Override
+            public String[] getSampleIds()
+            {
+                return AbstractGenotypeCallMatrix.this.getSampleIds();
+            }
+            
+            @Override
+            public long getSNPCount()
+            {
+                return extent;
+            }
+            
+            @Override
+            public byte[] getSNPCalls(long snpIndex)
+            {
+                return AbstractGenotypeCallMatrix.this.getSNPCalls(snpIndex + startSnpIndex);
+            }
+            
+            @Override
+            public String[] getChrIDs()
+            {
+                String[] chrIds = AbstractGenotypeCallMatrix.this.getChrIDs();
+                return Arrays.copyOfRange(chrIds, startSnpIndex, startSnpIndex + extent);
+            }
+            
+            @Override
+            public byte[][] getCallMatrix()
+            {
+                byte[][] callMat = AbstractGenotypeCallMatrix.this.getCallMatrix();
+                return Arrays.copyOfRange(callMat, startSnpIndex, startSnpIndex + extent);
+            }
+            
+            @Override
+            public String getBuildId()
+            {
+                return AbstractGenotypeCallMatrix.this.getBuildId();
+            }
+            
+            @Override
+            public long[] getBpPositions()
+            {
+                long[] bpPos = AbstractGenotypeCallMatrix.this.getBpPositions();
+                return Arrays.copyOfRange(bpPos, startSnpIndex, startSnpIndex + extent);
+            }
+            
+            @Override
+            public char[] getBAlleles()
+            {
+                char[] bAlleles = AbstractGenotypeCallMatrix.this.getBAlleles();
+                return Arrays.copyOfRange(bAlleles, startSnpIndex, startSnpIndex + extent);
+            }
+            
+            @Override
+            public char[] getAAlleles()
+            {
+                char[] aAlleles = AbstractGenotypeCallMatrix.this.getAAlleles();
+                return Arrays.copyOfRange(aAlleles, startSnpIndex, startSnpIndex + extent);
+            }
+        };
+    }
 }

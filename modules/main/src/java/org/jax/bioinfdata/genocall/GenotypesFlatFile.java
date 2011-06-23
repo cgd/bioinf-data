@@ -238,6 +238,11 @@ public class GenotypesFlatFile
         List<String> chrs = chrColumn >= 0 ? new ArrayList<String>() : null;
         List<Long> bpPos = bpPositionColumn >= 0 ? new ArrayList<Long>() : null;
         
+        // keep track of whether all of the rows are given in sort order or not
+        boolean isSorted = chrColumn >= 0 && bpPositionColumn >= 0;
+        String prevChr = null;
+        long prevPos = -1L;
+        
         for(int i = 0; i < flatFileReaders.length; i++)
         {
             String[] currRow = null;
@@ -271,14 +276,18 @@ public class GenotypesFlatFile
                     snpIds.add(currRow[snpIdColumn]);
                 }
                 
+                String currChr = null;
                 if(chrs != null)
                 {
-                    chrs.add(currRow[chrColumn]);
+                    currChr = currRow[chrColumn];
+                    chrs.add(currChr);
                 }
                 
+                long currPos = -1L;
                 if(bpPos != null)
                 {
-                    bpPos.add(Long.parseLong(currRow[bpPositionColumn]));
+                    currPos = Long.parseLong(currRow[bpPositionColumn]);
+                    bpPos.add(currPos);
                 }
                 
                 String[] callStrings = Arrays.copyOfRange(
@@ -289,6 +298,38 @@ public class GenotypesFlatFile
                         aAllele,
                         bAllele,
                         callStrings));
+                
+                if(isSorted)
+                {
+                    if(currChr == null || currPos < 0)
+                    {
+                        isSorted = false;
+                    }
+                    else if(prevChr != null)
+                    {
+                        if(prevChr.equals(currChr))
+                        {
+                            isSorted = prevPos <= currPos;
+                        }
+                        else
+                        {
+                            int chrComp = CallMatrixSorter.compareChrs(
+                                    prevChr,
+                                    currChr);
+                            if(chrComp > 0)
+                            {
+                                isSorted = false;
+                            }
+                            else if(chrComp == 0)
+                            {
+                                isSorted = prevPos <= currPos;
+                            }
+                        }
+                    }
+                }
+                
+                prevChr = currChr;
+                prevPos = currPos;
             }
         }
         
@@ -304,6 +345,7 @@ public class GenotypesFlatFile
         if(snpIds != null) genoCalls.setSnpIds(snpIds.toArray(new String[snpIds.size()]));
         if(chrs != null) genoCalls.setChrIDs(chrs.toArray(new String[chrs.size()]));
         if(bpPos != null) genoCalls.setBpPositions(SequenceUtilities.toLongArray(bpPos));
+        genoCalls.setSortedByPosition(isSorted);
         
         return genoCalls;
     }

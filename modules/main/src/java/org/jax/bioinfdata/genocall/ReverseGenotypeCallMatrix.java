@@ -261,9 +261,9 @@ public class ReverseGenotypeCallMatrix extends AbstractGenotypeCallMatrix
      * {@inheritDoc}
      */
     @Override
-    public boolean getSortedByPosition()
+    public boolean isSortedByPosition()
     {
-        return this.originalCallMatrix.getSortedByPosition();
+        return this.originalCallMatrix.isSortedByPosition();
     }
     
     /**

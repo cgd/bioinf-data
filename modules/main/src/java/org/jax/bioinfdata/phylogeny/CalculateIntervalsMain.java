@@ -29,6 +29,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.jax.bioinfdata.genocall.AbstractGenotypeCallMatrix;
 import org.jax.bioinfdata.genocall.HDF5GenotypeCallMatrix;
 import org.jax.util.io.CommonFlatFileFormat;
 import org.jax.util.io.FlatFileWriter;
@@ -91,27 +92,35 @@ public class CalculateIntervalsMain
                 IHDF5Reader hdf5Reader = hdf5Fac.openForReading(new File(hdf5InFileName));
                 HDF5GenotypeCallMatrix hdf5GenoMatrix = new HDF5GenotypeCallMatrix(hdf5Reader);
                 
-                List<IndexedSnpInterval> maxKScanResult = IntervalScanner.maxKScan(hdf5GenoMatrix);
-                List<PhylogenyTreeNode> phyloScanResult = PhylogenyScanner.inferPerfectPhylogenies(
-                        hdf5GenoMatrix,
-                        maxKScanResult);
-                assert maxKScanResult.size() == phyloScanResult.size();
-                
+                // write the header row
                 FlatFileWriter ffw = new FlatFileWriter(
                         new OutputStreamWriter(System.out),
                         CommonFlatFileFormat.CSV_UNIX);
-                String[] chrIDArray = hdf5GenoMatrix.getChrIDs();
-                long[] posArray = hdf5GenoMatrix.getBpPositions();
                 ffw.writeRow(new String[] {"chr", "start", "extent", "phylo"});
-                for(int i = 0; i < maxKScanResult.size(); i++)
+                
+                // scan the chromosomes in order
+                for(AbstractGenotypeCallMatrix currChrView : hdf5GenoMatrix.getChromosomeViews())
                 {
-                    IndexedSnpInterval isi = maxKScanResult.get(i);
-                    PhylogenyTreeNode phylo = phyloScanResult.get(i);
-                    ffw.writeRow(new String[] {
-                            chrIDArray[isi.getStartIndex()],
-                            Long.toString(posArray[isi.getStartIndex()]),
-                            Long.toString(posArray[isi.getEndIndex()]),
-                            phylo.toNewickFormat()});
+                    System.err.println("chr size: " + currChrView.getSNPCount());
+                    List<IndexedSnpInterval> maxKScanResult = IntervalScanner.maxKScan(currChrView);
+                    List<PhylogenyTreeNode> phyloScanResult = PhylogenyScanner.inferPerfectPhylogenies(
+                            currChrView,
+                            maxKScanResult);
+                    assert maxKScanResult.size() == phyloScanResult.size();
+                    
+                    String[] chrIDArray = currChrView.getChrIDs();
+                    long[] posArray = currChrView.getBpPositions();
+                    System.err.println("scan result size: " + maxKScanResult.size());
+                    for(int i = 0; i < maxKScanResult.size(); i++)
+                    {
+                        IndexedSnpInterval isi = maxKScanResult.get(i);
+                        PhylogenyTreeNode phylo = phyloScanResult.get(i);
+                        ffw.writeRow(new String[] {
+                                chrIDArray[isi.getStartIndex()],
+                                Long.toString(posArray[isi.getStartIndex()]),
+                                Long.toString(posArray[isi.getEndIndex()]),
+                                phylo.toNewickFormat()});
+                    }
                 }
                 ffw.flush();
             }

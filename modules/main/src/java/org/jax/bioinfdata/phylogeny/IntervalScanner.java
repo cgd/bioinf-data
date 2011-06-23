@@ -112,6 +112,13 @@ public class IntervalScanner
      */
     public static List<IndexedSnpInterval> uberScan(AbstractGenotypeCallMatrix callMatrix)
     {
+        if(!callMatrix.isSortedByPosition())
+        {
+            throw new IllegalArgumentException(
+                    "The given genotype matrix must be sorted in order to do " +
+                    "an interval scan");
+        }
+        
         ArrayList<IndexedSnpInterval> intervals = new ArrayList<IndexedSnpInterval>();
         
         long sdpCount = callMatrix.getSNPCount();
@@ -380,6 +387,13 @@ public class IntervalScanner
      */
     public static List<IndexedSnpInterval> greedyScan(AbstractGenotypeCallMatrix callMatrix)
     {
+        if(!callMatrix.isSortedByPosition())
+        {
+            throw new IllegalArgumentException(
+                    "The given genotype matrix must be sorted in order to do " +
+                    "an interval scan");
+        }
+        
         ArrayList<IndexedSnpInterval> intervals = new ArrayList<IndexedSnpInterval>();
         
         List<byte[]> intervalSdps = new ArrayList<byte[]>();
@@ -532,9 +546,6 @@ public class IntervalScanner
         }
         
         boolean observedFourGametes = observedAA && observedAB && observedBA && observedBB;
-        assert !observedFourGametes == areMinorityNormalizedSdpsCompatible(
-                        AbstractGenotypeCallMatrix.toBitSet(sdp1, true),
-                        AbstractGenotypeCallMatrix.toBitSet(sdp2, true));
         return !observedFourGametes;
     }
     

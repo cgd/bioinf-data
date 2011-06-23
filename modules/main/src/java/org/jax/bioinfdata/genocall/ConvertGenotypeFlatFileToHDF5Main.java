@@ -20,6 +20,7 @@ package org.jax.bioinfdata.genocall;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -42,6 +43,9 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  */
 public class ConvertGenotypeFlatFileToHDF5Main
 {
+    private static final Logger LOG = Logger.getLogger(
+            ConvertGenotypeFlatFileToHDF5Main.class.getName());
+    
     private static final int argToIntMinus1(String arg)
     {
         return arg == null ? -1 : Integer.parseInt(arg.trim()) - 1;
@@ -200,6 +204,13 @@ public class ConvertGenotypeFlatFileToHDF5Main
             options.addOption(outputFileOption);
         }
         
+        final Option sortOption;
+        {
+            sortOption = new Option("sort", "Sort the matrix by genomic position");
+            sortOption.setRequired(false);
+            options.addOption(sortOption);
+        }
+        
         try
         {
             commandLine = parser.parse(options, args);
@@ -246,6 +257,7 @@ public class ConvertGenotypeFlatFileToHDF5Main
                             ffFormat);
                 }
                 
+                LOG.info("reading genotype flat files");
                 GenotypeCallMatrix genoMat = GenotypesFlatFile.readGenoCallMatrix(
                         genoFFRs,
                         argToIntMinus1(aColStr),
@@ -262,6 +274,16 @@ public class ConvertGenotypeFlatFileToHDF5Main
                     genoFFRs[i].close();
                 }
                 
+                if(commandLine.hasOption(sortOption.getOpt()))
+                {
+                    if(!genoMat.isSortedByPosition())
+                    {
+                        LOG.info("sorting genotypes by position");
+                        CallMatrixSorter.sortCallMatrix(genoMat);
+                    }
+                }
+                
+                LOG.info("writing call matrix to " + outFileName);
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
                 File hdf5File = new File(outFileName);
                 if(hdf5File.exists())

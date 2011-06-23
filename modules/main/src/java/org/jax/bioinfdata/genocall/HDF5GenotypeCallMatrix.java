@@ -390,7 +390,7 @@ public class HDF5GenotypeCallMatrix extends AbstractGenotypeCallMatrix
      * {@inheritDoc}
      */
     @Override
-    public boolean getSortedByPosition()
+    public boolean isSortedByPosition()
     {
         if(this.hdf5Reader.exists(SORTED_BY_POS_NAME))
         {
