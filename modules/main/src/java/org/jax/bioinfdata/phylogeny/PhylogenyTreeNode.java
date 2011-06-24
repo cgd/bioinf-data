@@ -19,7 +19,6 @@ package org.jax.bioinfdata.phylogeny;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -454,7 +453,6 @@ public class PhylogenyTreeNode implements Cloneable, Serializable
         for(PhylogenyTreeEdge edge: this.childEdges)
         {
             newEdges.add(new PhylogenyTreeEdge(
-                    edge.getSdpBits(),
                     edge.getNode().resolveToSingleStrainLeafNodes(epsilon),
                     edge.getEdgeLength()));
         }
@@ -470,10 +468,7 @@ public class PhylogenyTreeNode implements Cloneable, Serializable
                 PhylogenyTreeNode newLeafNode = new PhylogenyTreeNode(
                         emptyEdges,
                         Collections.singletonList(strainName));
-                newEdges.add(new PhylogenyTreeEdge(
-                        new BitSet(0),
-                        newLeafNode,
-                        epsilon));
+                newEdges.add(new PhylogenyTreeEdge(newLeafNode, epsilon));
             }
         }
         
@@ -510,7 +505,6 @@ public class PhylogenyTreeNode implements Cloneable, Serializable
         {
             // recursively resolve child
             PhylogenyTreeEdge newEdge = new PhylogenyTreeEdge(
-                    edge.getSdpBits(),
                     edge.getNode().removeNonBranchingInteriorNodes(),
                     edge.getEdgeLength());
             
@@ -520,7 +514,6 @@ public class PhylogenyTreeNode implements Cloneable, Serializable
                 PhylogenyTreeEdge grandChildEdge =
                     newEdge.getNode().getChildEdges().get(0);
                 newEdge = new PhylogenyTreeEdge(
-                        newEdge.getSdpBits(),
                         grandChildEdge.getNode(),
                         newEdge.getEdgeLength() + grandChildEdge.getEdgeLength());
             }
@@ -559,22 +552,6 @@ public class PhylogenyTreeNode implements Cloneable, Serializable
     public int hashCode()
     {
         return ObjectUtil.hashObject(this.strains);
-    }
-    
-    /**
-     * Sets all SDPs to null recursively
-     * @return
-     *          the resulting tree
-     */
-    public PhylogenyTreeNode createSdpFreeTree()
-    {
-        PhylogenyTreeNode zeroedTree = this.clone();
-        for(PhylogenyTreeEdge childEdge: zeroedTree.childEdges)
-        {
-            childEdge.setSdpBits(null);
-            childEdge.getNode().createSdpFreeTree();
-        }
-        return zeroedTree;
     }
     
     /**
@@ -800,7 +777,6 @@ public class PhylogenyTreeNode implements Cloneable, Serializable
                     // reverse the edge
                     childIter.remove();
                     nextChild.getNode().childEdges.add(new PhylogenyTreeEdge(
-                            nextChild.getSdpBits(),
                             this,
                             nextChild.getEdgeLength()));
                     return true;

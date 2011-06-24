@@ -18,7 +18,6 @@
 package org.jax.bioinfdata.phylogeny;
 
 import java.io.Serializable;
-import java.util.BitSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,8 +38,6 @@ public class PhylogenyTreeEdge implements Cloneable, Serializable
     private static final Logger LOG = Logger.getLogger(
             PhylogenyTreeEdge.class.getName());
     
-    private BitSet sdpBits;
-    
     private PhylogenyTreeNode node;
     
     private double edgeLength;
@@ -50,24 +47,20 @@ public class PhylogenyTreeEdge implements Cloneable, Serializable
      */
     public PhylogenyTreeEdge()
     {
-        this(null, null, 1.0);
+        this(null, 1.0);
     }
     
     /**
      * Constructor
-     * @param sdpBits
-     *          see {@link #getSdpBits()}
      * @param node
      *          see {@link #getNode()}
      * @param edgeLength
      *          see {@link #getEdgeLength()}
      */
     public PhylogenyTreeEdge(
-            BitSet sdpBits,
             PhylogenyTreeNode node,
             double edgeLength)
     {
-        this.sdpBits = sdpBits;
         this.node = node;
         this.edgeLength = edgeLength;
     }
@@ -92,27 +85,6 @@ public class PhylogenyTreeEdge implements Cloneable, Serializable
         this.edgeLength = edgeLength;
     }
 
-    /**
-     * Getter for the Strain Distribution pattern for this edge represented as
-     * bit flags
-     * @return
-     *          the sdpBits
-     */
-    public BitSet getSdpBits()
-    {
-        return this.sdpBits;
-    }
-    
-    /**
-     * Setter for the SDP bits
-     * @see #getSdpBits()
-     * @param sdpBits the sdpBits to set
-     */
-    public void setSdpBits(BitSet sdpBits)
-    {
-        this.sdpBits = sdpBits;
-    }
-    
     /**
      * Getter for the child node at the end of this edge
      * @return the node

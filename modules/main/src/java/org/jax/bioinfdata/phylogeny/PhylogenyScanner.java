@@ -126,7 +126,6 @@ public class PhylogenyScanner
                     childInclusionHierarchy,
                     sdpStrainNames);
             PhylogenyTreeEdge childEdge = new PhylogenyTreeEdge(
-                    childInclusionHierarchy.getSdpBits(),
                     childPhylogeny,
                     1.0);
             childEdges.add(childEdge);

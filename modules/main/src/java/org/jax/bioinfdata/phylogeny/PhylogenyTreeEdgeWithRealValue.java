@@ -18,7 +18,6 @@
 package org.jax.bioinfdata.phylogeny;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 
 import org.jax.util.math.Function;
@@ -37,8 +36,6 @@ public class PhylogenyTreeEdgeWithRealValue extends PhylogenyTreeEdge
     
     /**
      * Constructor
-     * @param sdpBits
-     *          see {@link #getSdpBits()}
      * @param node
      *          see {@link #getNode()}
      * @param edgeLength
@@ -47,12 +44,11 @@ public class PhylogenyTreeEdgeWithRealValue extends PhylogenyTreeEdge
      *          see {@link #getRealValue()}
      */
     public PhylogenyTreeEdgeWithRealValue(
-            BitSet sdpBits,
             PhylogenyTreeNode node,
             double edgeLength,
             double realValue)
     {
-        super(sdpBits, node, edgeLength);
+        super(node, edgeLength);
         this.realValue = realValue;
     }
 
@@ -102,7 +98,6 @@ public class PhylogenyTreeEdgeWithRealValue extends PhylogenyTreeEdge
                 
                 PhylogenyTreeEdgeWithRealValue newEdge =
                     new PhylogenyTreeEdgeWithRealValue(
-                            edgeWithValue.getSdpBits(),
                             transNode,
                             edgeWithValue.getEdgeLength(),
                             newValue.doubleValue());
@@ -125,9 +120,7 @@ public class PhylogenyTreeEdgeWithRealValue extends PhylogenyTreeEdge
      */
     public static PhylogenyTreeEdgeWithRealValue getEdgeWithMininumValue(PhylogenyTreeNode node)
     {
-        return getEdgeWithMinimumValueRecursive(
-                node,
-                null);
+        return getEdgeWithMinimumValueRecursive(node, null);
     }
     
     private static PhylogenyTreeEdgeWithRealValue getEdgeWithMinimumValueRecursive(
