@@ -8,5 +8,5 @@ SRC_DIR=`dirname $0`
 CP=""
 for i in `find "${SRC_DIR}/dist" -name '*.jar'`; do CP="${CP}:${i}"; done
 
-java -enableassertions -Xmx1g -cp "${CP}" org.jax.bioinfdata.phylogeny.CalculateIntervalsMain $@
+java -enableassertions -Xmx1g -cp "${CP}" org.jax.bioinfdata.phylogeny.MaxKPhylogenyMain $@
 

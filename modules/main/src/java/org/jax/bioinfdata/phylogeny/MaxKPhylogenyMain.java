@@ -18,8 +18,8 @@
 package org.jax.bioinfdata.phylogeny;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
@@ -41,7 +41,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 /**
  * @author <A HREF="mailto:keith.sheppard@jax.org">Keith Sheppard</A>
  */
-public class CalculateIntervalsMain
+public class MaxKPhylogenyMain
 {
     /**
      * The main entry point
@@ -74,6 +74,18 @@ public class CalculateIntervalsMain
             options.addOption(hdf5InputFileOption);
         }
         
+        final Option csvOutputFileOption;
+        {
+            csvOutputFileOption = new Option(
+                    "csvout",
+                    "the CSV output file with max-k intervals and their " +
+                    "corresponding perfect phylogenies in newick format");
+            csvOutputFileOption.setRequired(true);
+            csvOutputFileOption.setArgs(1);
+            csvOutputFileOption.setArgName("file name");
+            options.addOption(csvOutputFileOption);
+        }
+        
         try
         {
             commandLine = parser.parse(options, args);
@@ -82,11 +94,12 @@ public class CalculateIntervalsMain
             if(commandLine.hasOption(helpOption.getOpt()))
             {
                 HelpFormatter helpFormatter = new HelpFormatter();
-                helpFormatter.printHelp("calcintervals", options);
+                helpFormatter.printHelp("maxkphylo", options);
             }
             else
             {
                 final String hdf5InFileName = commandLine.getOptionValue(hdf5InputFileOption.getOpt());
+                final String csvOutFileName = commandLine.getOptionValue(csvOutputFileOption.getOpt());
                 
                 IHDF5Factory hdf5Fac = HDF5FactoryProvider.get();
                 IHDF5Reader hdf5Reader = hdf5Fac.openForReading(new File(hdf5InFileName));
@@ -94,14 +107,18 @@ public class CalculateIntervalsMain
                 
                 // write the header row
                 FlatFileWriter ffw = new FlatFileWriter(
-                        new OutputStreamWriter(System.out),
+                        //new OutputStreamWriter(System.out),
+                        new FileWriter(csvOutFileName),
                         CommonFlatFileFormat.CSV_UNIX);
-                ffw.writeRow(new String[] {"chr", "start", "extent", "phylo"});
+                ffw.writeRow(new String[] {
+                        "chrID",
+                        "bpStartPosition",
+                        "bpEndPosition",
+                        "newickPerfectPhylogeny"});
                 
                 // scan the chromosomes in order
                 for(AbstractGenotypeCallMatrix currChrView : hdf5GenoMatrix.getChromosomeViews())
                 {
-                    System.err.println("chr size: " + currChrView.getSNPCount());
                     List<IndexedSnpInterval> maxKScanResult = IntervalScanner.maxKScan(currChrView);
                     List<PhylogenyTreeNode> phyloScanResult = PhylogenyScanner.inferPerfectPhylogenies(
                             currChrView,
@@ -110,7 +127,6 @@ public class CalculateIntervalsMain
                     
                     String[] chrIDArray = currChrView.getChrIDs();
                     long[] posArray = currChrView.getBpPositions();
-                    System.err.println("scan result size: " + maxKScanResult.size());
                     for(int i = 0; i < maxKScanResult.size(); i++)
                     {
                         IndexedSnpInterval isi = maxKScanResult.get(i);
@@ -123,12 +139,13 @@ public class CalculateIntervalsMain
                     }
                 }
                 ffw.flush();
+                ffw.close();
             }
         }
         catch(ParseException ex)
         {
             HelpFormatter helpFormatter = new HelpFormatter();
-            helpFormatter.printHelp("calcintervals", options);
+            helpFormatter.printHelp("maxkphylo", options);
             
             System.exit(-1);
         }

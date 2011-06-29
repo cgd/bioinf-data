@@ -19,7 +19,9 @@ package org.jax.bioinfdata.phylogeny;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -846,5 +848,56 @@ public class PhylogenyTreeNode implements Cloneable, Serializable
                     ex);
             return null;
         }
+    }
+    
+    public Set<BitSet> sdps(List<String> orderedStrainNames, int minMinorStrainCount)
+    {
+        List<BitSet> childSdps = this.addSdpsRecursive(orderedStrainNames);
+        Set<BitSet> sdps = new HashSet<BitSet>(childSdps.size());
+        
+        int strainCount = orderedStrainNames.size();
+        for(BitSet sdp : childSdps)
+        {
+            // if there are more 1's than 0's OR if the 1's count is equal to
+            // the 0's count AND the 1st bit is on, then we need to flip all
+            // of the bits to normalize
+            int doubleOnesCount = sdp.cardinality() * 2;
+            if(doubleOnesCount > strainCount ||
+               (doubleOnesCount == strainCount && sdp.get(0)))
+            {
+                sdp.flip(0, strainCount);
+            }
+            
+            if(sdp.cardinality() >= minMinorStrainCount)
+            {
+                sdps.add(sdp);
+            }
+        }
+        
+        return sdps;
+    }
+    
+    private List<BitSet> addSdpsRecursive(List<String> orderedStrainNames)
+    {
+        List<BitSet> sdps = new ArrayList<BitSet>(orderedStrainNames.size());
+        BitSet sdp = new BitSet(orderedStrainNames.size());
+        sdps.add(sdp);
+        
+        for(String strain : this.getStrains())
+        {
+            sdp.set(orderedStrainNames.indexOf(strain));
+        }
+        
+        for(PhylogenyTreeEdge edge : this.getChildEdges())
+        {
+            List<BitSet> childSdps = edge.getNode().addSdpsRecursive(orderedStrainNames);
+            
+            // the 1st SDP represents the head and so any bits turned on in
+            // subsequent bit sets should be turned on in the 1st
+            sdp.or(childSdps.get(0));
+            sdps.addAll(childSdps);
+        }
+        
+        return sdps;
     }
 }
